@@ -1,0 +1,1265 @@
+<!DOCTYPE html><html class="scroll-smooth" lang="es"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>OECE / SEACE RONIN - Cockpit Forense Bushidō (Auditoría Contrataciones del Estado)</title>
+<!-- Google Fonts: Cinzel, Cormorant Garamond, Space Grotesk & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&amp;family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS CDN with forms and container queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            vermilion: {
+              DEFAULT: '#9E1B1E',
+              dark: '#7A1215',
+              light: '#BF262A',
+              crimson: '#C81D25',
+              glow: '#FF2E38'
+            },
+            washi: {
+              base: '#FAF7F2',
+              surface: '#F3EFE7',
+              border: '#E3D7C5',
+              muted: '#7F786B'
+            },
+            sumi: {
+              black: '#111116',
+              deep: '#1A181C',
+              surface: '#242127',
+              border: '#3D3642',
+              ink: '#0B0A0D'
+            },
+            gold: {
+              crest: '#C5A059',
+              light: '#DFBD76',
+              antique: '#9C7A3C'
+            }
+          },
+          fontFamily: {
+            cinzel: ['"Cinzel"', 'serif'],
+            serif: ['"Cormorant Garamond"', 'serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+            sans: ['"Space Grotesk"', 'sans-serif']
+          },
+          boxShadow: {
+            'vermilion-glow': '0 0 30px -4px rgba(158, 27, 30, 0.55)',
+            'gold-glow': '0 0 25px -4px rgba(197, 160, 89, 0.45)',
+            'paper-card': '0 10px 35px rgba(35, 25, 20, 0.06)',
+            'hanko': 'inset 0 0 0 2px #9E1B1E, inset 0 0 10px rgba(158, 27, 30, 0.25)'
+          }
+        }
+      }
+    }
+  </script>
+<!-- BEGIN: Custom Styles for Japanese Editorial Bushido Aesthetic -->
+<style data-purpose="washi-editorial-theme">
+    /* Subtle Washi paper grain simulation */
+    .washi-pattern {
+      background-color: #FAF7F2;
+      background-image: radial-gradient(#D8CEBC 0.8px, transparent 0.8px), radial-gradient(#D8CEBC 0.8px, #FAF7F2 0.8px);
+      background-size: 28px 28px;
+      background-position: 0 0, 14px 14px;
+    }
+
+    .dark .washi-pattern {
+      background-color: #0E0D10;
+      background-image: radial-gradient(#2A2530 0.8px, transparent 0.8px), radial-gradient(#2A2530 0.8px, #0E0D10 0.8px);
+      background-size: 28px 28px;
+      background-position: 0 0, 14px 14px;
+    }
+
+    /* Japanese Shoji & Katana cut border panels */
+    .comic-panel {
+      position: relative;
+      border: 1px solid #D6C7B2;
+      background: rgba(254, 252, 248, 0.92);
+      backdrop-filter: blur(8px);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .dark .comic-panel {
+      border: 1px solid #362E3B;
+      background: rgba(22, 19, 25, 0.92);
+    }
+    .comic-panel:hover {
+      border-color: #9E1B1E;
+      box-shadow: 0 14px 38px -10px rgba(158, 27, 30, 0.2);
+    }
+
+    /* Card selectable state */
+    .kpi-card-selectable {
+      cursor: pointer;
+      position: relative;
+      user-select: none;
+    }
+    .kpi-card-selectable.is-active {
+      border-color: #9E1B1E !important;
+      box-shadow: 0 0 0 2px #9E1B1E, 0 10px 30px -5px rgba(158, 27, 30, 0.3) !important;
+      background: rgba(158, 27, 30, 0.04);
+    }
+    .dark .kpi-card-selectable.is-active {
+      background: rgba(158, 27, 30, 0.12);
+    }
+
+    /* Diamond vertex ornaments */
+    .corner-bracket::before,
+    .corner-bracket::after {
+      content: "✦";
+      position: absolute;
+      font-size: 9px;
+      line-height: 1;
+      color: #9E1B1E;
+      pointer-events: none;
+    }
+    .corner-bracket::before { top: -6px; left: -5px; }
+    .corner-bracket::after { bottom: -6px; right: -5px; }
+
+    /* Octagonal cut clip path */
+    .octagon-frame {
+      clip-path: polygon(14% 0%, 86% 0%, 100% 14%, 100% 86%, 86% 100%, 14% 100%, 0% 86%, 0% 14%);
+    }
+    .katana-cut-r {
+      clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+    }
+
+    /* Traditional Red Ink Hanko Seals */
+    .hanko-seal {
+      border: 2px solid #9E1B1E;
+      color: #9E1B1E;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cinzel', serif;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      position: relative;
+    }
+    .hanko-circle {
+      border-radius: 9999px;
+      border: 2px solid #9E1B1E;
+      color: #9E1B1E;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+    }
+
+    /* Sumi-e brush organic divider */
+    .brush-divider {
+      height: 3px;
+      background: linear-gradient(90deg, transparent 0%, #9E1B1E 20%, #C5A059 50%, #9E1B1E 80%, transparent 100%);
+      opacity: 0.6;
+      position: relative;
+    }
+    .brush-divider::after {
+      content: "◆";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 10px;
+      color: #9E1B1E;
+      background: #FAF7F2;
+      padding: 0 4px;
+    }
+    .dark .brush-divider::after {
+      background: #0E0D10;
+    }
+
+    /* Interactive Dot Matrix Canvas */
+    #dotCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.75;
+    }
+
+    /* Tooltip modal overlay */
+    .modal-backdrop {
+      background: rgba(14, 13, 16, 0.7);
+      backdrop-filter: blur(4px);
+    }
+  </style>
+<!-- END: Custom Styles -->
+</head>
+<body class="washi-pattern text-sumi-black dark:text-stone-200 antialiased min-h-screen selection:bg-vermilion selection:text-white transition-colors duration-300 relative font-sans">
+<!-- Interactive Dot Matrix Background Canvas with Alive Ink Ripple Effect -->
+<canvas height="3386" id="dotCanvas" width="1280"></canvas>
+<!-- BEGIN: MainHeader -->
+<header class="relative z-20 border-b border-washi-border dark:border-sumi-border bg-washi-base/95 dark:bg-sumi-black/95 backdrop-blur-md sticky top-0 transition-colors shadow-sm">
+<div class="max-w-[1640px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+<!-- Brand & Japanese Mon Crest (Katana / Torii) -->
+<div class="flex items-center gap-3.5">
+<div class="w-11 h-11 octagon-frame bg-vermilion flex items-center justify-center text-white shadow-sm ring-2 ring-vermilion-light/50 flex-shrink-0 relative group">
+<!-- Stylized Samurai War Fan / Katana Cross Mon -->
+<svg class="w-6 h-6 fill-current transform group-hover:rotate-45 transition-transform duration-300" viewBox="0 0 24 24">
+<path d="M12 2L14.8 9H9.2L12 2ZM3 10H21V12H19V20H17V12H13V22H11V12H7V20H5V12H3V10ZM12 5.5L10.8 8.5H13.2L12 5.5Z"></path>
+</svg>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-cinzel text-lg sm:text-xl font-black tracking-widest text-sumi-black dark:text-stone-100 uppercase">OECE / RONIN<span class="text-vermilion">.SEACE</span></span>
+<span class="text-[10px] font-mono tracking-wider px-2 py-0.5 border border-vermilion/50 text-vermilion bg-vermilion/10 font-bold uppercase">武士道 FORENSIC</span>
+</div>
+<p class="text-[11px] font-serif tracking-wider text-sumi-black dark:text-stone-300 italic font-medium">Vigilancia Algorítmica y Control Concurrente de Contrataciones Estatales (Perú)</p>
+</div>
+</div>
+<!-- Navigation Pillars (Exact technical tabs) -->
+<nav class="hidden lg:flex items-center gap-1.5 p-1.5 bg-washi-surface/90 dark:bg-sumi-deep border border-vermilion/40 shadow-sm relative corner-bracket"><div class="flex items-center gap-1.5 px-2.5 py-1 bg-sumi-black dark:bg-sumi-black text-white text-[10px] font-mono tracking-wider font-bold uppercase mr-1 border-r border-vermilion/50"><span class="text-vermilion font-bold text-xs">道</span><span class="">SUITE DE PANTALLAS:</span></div><button class="tab-btn active px-3.5 py-1.5 text-xs font-cinzel font-bold tracking-wider uppercase bg-vermilion text-white shadow-sm border border-vermilion-light flex items-center gap-1.5" onclick="setActiveTab(this, 'general')"><span class="text-[10px] text-gold-crest">✦</span><span class="">01. VISIÓN GENERAL</span></button><button class="tab-btn px-3 py-1.5 text-xs font-cinzel font-semibold tracking-wider uppercase text-sumi-black dark:text-stone-200 hover:text-vermilion dark:hover:text-vermilion hover:bg-stone-200/50 dark:hover:bg-sumi-surface border border-transparent hover:border-washi-border transition flex items-center gap-1" onclick="setActiveTab(this, 'fase1')"><span class="">02. FASE 1: COMPETENCIA &amp; BANDERAS ROJAS</span></button><button class="tab-btn px-3 py-1.5 text-xs font-cinzel font-semibold tracking-wider uppercase text-sumi-black dark:text-stone-200 hover:text-vermilion dark:hover:text-vermilion hover:bg-stone-200/50 dark:hover:bg-sumi-surface border border-transparent hover:border-washi-border transition flex items-center gap-1" onclick="setActiveTab(this, 'explorador')"><span class="">03. EXPLORADOR POR ÍTEM</span></button><button class="tab-btn px-3 py-1.5 text-xs font-cinzel font-semibold tracking-wider uppercase text-sumi-black dark:text-stone-200 hover:text-vermilion dark:hover:text-vermilion hover:bg-stone-200/50 dark:hover:bg-sumi-surface border border-transparent hover:border-washi-border transition flex items-center gap-1" onclick="setActiveTab(this, 'sha256')"><span class="">04. AUDITORÍA FORENSE SHA-256</span></button></nav>
+<!-- Right Controls: Status, Sumi/Washi mode, Export -->
+<div class="flex items-center gap-2.5">
+<div class="hidden sm:flex items-center gap-2 px-2.5 py-1 border border-vermilion/40 bg-vermilion/5 text-vermilion text-xs font-mono">
+<span class="w-2 h-2 rounded-full bg-vermilion animate-ping"></span>
+<span class="font-bold">NODO SEACE ONLINE [SNC-PE]</span>
+</div>
+<button class="p-2 border border-washi-border dark:border-sumi-border bg-white/80 dark:bg-sumi-deep text-sumi-black dark:text-stone-300 hover:border-vermilion text-xs flex items-center gap-1 font-mono transition" id="themeToggle" title="Alternar Modo Sumi (Oscuro) / Washi (Claro)">
+<span class="" id="themeLabel">墨 SUMI-E</span>
+</button>
+<button class="relative group bg-vermilion hover:bg-vermilion-dark text-white px-3.5 py-2 font-cinzel text-xs font-bold tracking-widest uppercase transition-all duration-200 flex items-center gap-2 shadow-sm border border-vermilion-light" onclick="openModal('Expediente Maestro Descarga Generada con Hash SHA-256: 0x9B2A4F...77C. Todos los registros consolidados listos para exportación penal / fiscal.')">
+<span class="">DESCARGAR EXPEDIENTE</span>
+<span class="text-xs">✦</span>
+</button>
+</div>
+</div>
+</header>
+<!-- END: MainHeader -->
+<!-- BEGIN: MainContent -->
+<main class="relative z-10 max-w-[1640px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-7">
+<!-- TOP HERO BANNER & CASCADING FILTERS BAR -->
+<section class="comic-panel corner-bracket p-5 sm:p-6 lg:p-7">
+<div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+<div class="max-w-3xl space-y-2">
+<div class="flex flex-wrap items-center gap-2 text-vermilion text-xs font-cinzel font-bold tracking-widest uppercase">
+<span class="">[ FISCALIZACIÓN Y AUDITORÍA ALGORÍTMICA FORENSE ]</span>
+<span class="">―</span>
+<span class="text-stone-500 dark:text-stone-400 font-mono">HASH LEDGER: 0x9B2A4F9E...77CA</span>
+<span class="hanko-seal text-[9px] px-1.5 py-0.2">正 JUSTICIA</span>
+</div>
+<h1 class="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-sumi-black dark:text-stone-100 leading-none">
+          CÓDIGO DE VIGILANCIA SEACE <span class="text-vermilion italic font-normal">&amp;</span> FORENSE ESTATAL
+        </h1>
+<p class="text-sm font-sans text-sumi-black dark:text-stone-200 max-w-3xl leading-relaxed font-normal">Detección masiva de concentración de mercado, postores únicos de fachada y adjudicaciones exprés bajo el canon analítico del modelo <strong class="text-vermilion font-bold">Bushidō</strong>. Monitoreo constante sobre el Sistema Electrónico de Contrataciones del Estado (Perú 2024 / Ley N° 30225 y DS N° 082-2019-EF).</p>
+</div>
+<!-- Quick Seal / Mon Badge -->
+<div class="hidden xl:flex items-center gap-3 p-3 bg-washi-surface dark:bg-sumi-surface border border-washi-border dark:border-sumi-border">
+<div class="hanko-circle w-10 h-10 text-xs">誠</div>
+<div class="text-[11px] font-mono leading-tight">
+<div class="font-bold text-sumi-black dark:text-stone-200">CANON BUSHIDŌ OECE</div>
+<div class="text-sumi-black dark:text-stone-300 font-semibold">Integridad &amp; Corte Forense</div>
+</div>
+</div>
+</div>
+<!-- Organic Sumi-e Divider -->
+<div class="brush-divider my-4"></div>
+<!-- HORIZONTAL FILTER BAR IN CASCADE -->
+<div class="pt-1">
+<div class="text-[11px] font-cinzel font-bold tracking-wider text-vermilion uppercase mb-2 flex items-center gap-2">
+<span class="">✦ PARÁMETROS DE FILTRADO CONCURRENTE EN CASCADA</span>
+<span class="text-sumi-black dark:text-stone-300 font-mono font-medium">| Conexión con Dataset SEACE v2024</span>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5"><div><label class="block text-[10px] font-mono text-sumi-black dark:text-stone-200 font-bold uppercase mb-1">1. Año Fiscal</label><select class="w-full text-xs font-mono font-semibold text-sumi-black bg-white dark:bg-sumi-surface border-washi-border dark:border-sumi-border py-1.5 px-2 focus:ring-vermilion focus:border-vermilion" id="filterYear" onchange="applyFilters()"><option selected="" value="2024">EJERCICIO 2024</option><option value="2023">EJERCICIO 2023</option><option value="2022">EJERCICIO 2022</option></select></div><div><label class="block text-[10px] font-mono text-sumi-black dark:text-stone-200 font-bold uppercase mb-1">2. Mes / Periodo</label><select class="w-full text-xs font-mono font-semibold text-sumi-black bg-white dark:bg-sumi-surface border-washi-border dark:border-sumi-border py-1.5 px-2 focus:ring-vermilion focus:border-vermilion" id="filterMonth" onchange="applyFilters()"><option selected="" value="all">TODO EL EJERCICIO (ENE-DIC)</option><option value="Q1">1ER TRIMESTRE (ENE-MAR)</option><option value="Q2">2DO TRIMESTRE (ABR-JUN)</option><option value="Q3">3ER TRIMESTRE (JUL-SET)</option><option value="Q4">4TO TRIMESTRE (OCT-DIC)</option><option value="12">DICIEMBRE (CIERRE ANUAL)</option></select></div><div><label class="block text-[10px] font-mono text-sumi-black dark:text-stone-200 font-bold uppercase mb-1">3. Ubigeo / Región</label><select class="w-full text-xs font-mono font-semibold text-sumi-black bg-white dark:bg-sumi-surface border-washi-border dark:border-sumi-border py-1.5 px-2 focus:ring-vermilion focus:border-vermilion" id="filterRegion" onchange="applyFilters()"><option selected="" value="all">NIVEL NACIONAL (25 DPTOS)</option><option value="lima">LIMA &amp; CALLAO (49.4%)</option><option value="cusco">CUSCO (13.1%)</option><option value="arequipa">AREQUIPA (10.0%)</option><option value="ancash">ÁNCASH (7.6%)</option><option value="piura">PIURA &amp; LA LIBERTAD</option></select></div><div><label class="block text-[10px] font-mono text-sumi-black dark:text-stone-200 font-bold uppercase mb-1">4. Objeto Contractual</label><select class="w-full text-xs font-mono font-semibold text-sumi-black bg-white dark:bg-sumi-surface border-washi-border dark:border-sumi-border py-1.5 px-2 focus:ring-vermilion focus:border-vermilion" id="filterObject" onchange="applyFilters()"><option selected="" value="all">TODOS LOS OBJETOS</option><option value="bienes">BIENES (42%)</option><option value="obras">OBRAS CIVILES (33%)</option><option value="servicios">SERVICIOS (20%)</option><option value="consultorias">CONSULTORÍAS (5%)</option></select></div><div><label class="block text-[10px] font-mono text-sumi-black dark:text-stone-200 font-bold uppercase mb-1">5. Tipo de Proceso</label><select class="w-full text-xs font-mono font-semibold text-sumi-black bg-white dark:bg-sumi-surface border-washi-border dark:border-sumi-border py-1.5 px-2 focus:ring-vermilion focus:border-vermilion" id="filterType" onchange="applyFilters()"><option selected="" value="all">TODAS LAS MODALIDADES</option><option value="LP">LICITACIÓN PÚBLICA (LP)</option><option value="CP">CONCURSO PÚBLICO (CP)</option><option value="AS">ADJUDICACIÓN SIMPLIFICADA (AS)</option><option value="CD">CONTRATACIÓN DIRECTA (CD)</option></select></div><div><label class="block text-[10px] font-mono text-sumi-black dark:text-stone-200 font-bold uppercase mb-1">Búsqueda Forense</label><div class="flex"><input class="w-full text-xs font-mono font-semibold text-sumi-black bg-white dark:bg-sumi-surface border-washi-border dark:border-sumi-border py-1.5 px-2 focus:ring-vermilion focus:border-vermilion" id="katanaInput" placeholder="RUC / Proceso..." type="text"><button class="px-2.5 bg-vermilion hover:bg-vermilion-dark text-white font-cinzel text-xs flex items-center justify-center transition border border-vermilion-light" onclick="triggerKatanaSearch()" title="Corte de Búsqueda Katana">⚔</button></div></div></div>
+</div>
+</section>
+<!-- BEGIN: KPI CARDS SECTION (6 EXACT KPIS FROM SECTION 2, INTERACTIVE & SELECTABLE) -->
+<section>
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<span class="text-xs font-cinzel font-bold tracking-wider text-sumi-black dark:text-stone-200 uppercase">INDICADORES DE PRIMER NIVEL (KPIS DE INTEGRIDAD CONCURRENTE)</span>
+<span class="text-[10px] font-mono px-2 py-0.5 border border-washi-border dark:border-sumi-border text-washi-muted dark:text-stone-400">Clic para aislar segmento</span>
+</div>
+<span class="text-[10px] font-mono border px-2 py-0.5 bg-vermilion/5 text-amber-700 dark:text-gold-crest border-vermilion/30 text-vermilion" id="activeFilterBadge">FILTRO ACTIVO: NINGUNO (VISTA GLOBAL)</span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5">
+<!-- KPI-01: Total Ítems Convocados -->
+<div class="kpi-card-selectable comic-notched-card p-3.5 relative" id="kpi-1" onclick="toggleKpiCard(1, 'Total Ítems Convocados')"><span class="corner-diamond corner-diamond-tl"></span><span class="corner-diamond corner-diamond-tr"></span><span class="corner-diamond corner-diamond-bl"></span><span class="corner-diamond corner-diamond-br"></span><div class="flex items-center justify-between text-xs font-mono text-washi-muted dark:text-stone-400 mb-1.5"><span class="font-cinzel font-bold text-sumi-black dark:text-stone-200 flex items-center gap-1"><span class="w-1.5 h-1.5 bg-vermilion rotate-45 inline-block"></span> KPI-01 CONVOCADOS</span><span class="text-emerald-700 dark:text-emerald-400 font-semibold text-[11px]">+12.4%</span></div><div class="text-2xl font-mono font-bold text-sumi-black dark:text-stone-100" id="valKpi1">142,850</div><div class="text-[10px] font-serif text-sumi-black dark:text-stone-300 italic font-medium mt-0.5">Ítems y licitaciones convocadas a nivel nacional</div><div class="mt-2.5 h-1 w-full bg-washi-border dark:bg-sumi-border overflow-hidden"><div class="h-full bg-sumi-black dark:bg-stone-300 w-[78%]"></div></div></div>
+<!-- KPI-02: Total Contratos Formalizados -->
+<div class="kpi-card-selectable comic-notched-card p-3.5 relative" id="kpi-2" onclick="toggleKpiCard(2, 'Total Contratos Formalizados')"><span class="corner-diamond corner-diamond-tl"></span><span class="corner-diamond corner-diamond-tr"></span><span class="corner-diamond corner-diamond-bl"></span><span class="corner-diamond corner-diamond-br"></span><div class="flex items-center justify-between text-xs font-mono text-washi-muted dark:text-stone-400 mb-1.5"><span class="font-cinzel font-bold text-sumi-black dark:text-stone-200 flex items-center gap-1"><span class="w-1.5 h-1.5 bg-vermilion rotate-45 inline-block"></span> KPI-02 FORMALIZADOS</span><span class="text-sumi-black dark:text-stone-300 font-semibold text-[11px]">TASA: 68.9%</span></div><div class="text-2xl font-mono font-bold text-sumi-black dark:text-stone-100" id="valKpi2">98,420</div><div class="text-[10px] font-serif text-sumi-black dark:text-stone-300 italic font-medium mt-0.5">Contratos perfeccionados y consentidos en SEACE</div><div class="mt-2.5 h-1 w-full bg-washi-border dark:bg-sumi-border overflow-hidden"><div class="h-full bg-vermilion w-[68.9%]"></div></div></div>
+<!-- KPI-03: Proveedores Participantes / Postores Únicos -->
+<div class="kpi-card-selectable comic-notched-card p-3.5 relative" id="kpi-3" onclick="toggleKpiCard(3, 'Proveedores Participantes')"><span class="corner-diamond corner-diamond-tl"></span><span class="corner-diamond corner-diamond-tr"></span><span class="corner-diamond corner-diamond-bl"></span><span class="corner-diamond corner-diamond-br"></span><div class="flex items-center justify-between text-xs font-mono mb-1.5"><span class="font-cinzel font-bold text-sumi-black dark:text-stone-200 flex items-center gap-1"><span class="w-1.5 h-1.5 bg-vermilion rotate-45 inline-block"></span> KPI-03 PROVEEDORES</span><span class="text-sumi-black font-mono font-bold text-[10px]">RUCs Activos</span></div><div class="text-2xl font-mono font-bold text-sumi-black dark:text-stone-100" id="valKpi3">34,180</div><div class="text-[10px] font-serif text-sumi-black dark:text-stone-300 italic font-medium mt-0.5">Actores en competencia en el Registro Nacional</div><div class="mt-2.5 h-1 w-full bg-washi-border dark:bg-sumi-border overflow-hidden"><div class="h-full bg-gold-crest w-[58%]"></div></div></div>
+<!-- KPI-04: Monto Total Contratado -->
+<div class="kpi-card-selectable comic-notched-card p-3.5 relative" id="kpi-4" onclick="toggleKpiCard(4, 'Monto Total Contratado')"><span class="corner-diamond corner-diamond-tl"></span><span class="corner-diamond corner-diamond-tr"></span><span class="corner-diamond corner-diamond-bl"></span><span class="corner-diamond corner-diamond-br"></span><div class="flex items-center justify-between text-xs font-mono mb-1.5"><span class="font-cinzel font-bold text-sumi-black dark:text-stone-200 flex items-center gap-1"><span class="w-1.5 h-1.5 bg-vermilion rotate-45 inline-block"></span> KPI-04 MONTO ADJ.</span><span class="text-sumi-black font-mono font-bold text-[10px]">PEN (S/)</span></div><div class="text-2xl font-mono font-bold text-sumi-black dark:text-stone-100" id="valKpi4">S/ 48,920 <span class="text-xs font-normal text-vermilion font-sans">MM</span></div><div class="text-[10px] font-serif text-sumi-black dark:text-stone-300 italic font-medium mt-0.5">Volumen fiscal contractual liquidado en SEACE</div><div class="mt-2.5 h-1 w-full bg-washi-border dark:bg-sumi-border overflow-hidden"><div class="h-full bg-gold-crest w-[84%]"></div></div></div>
+<!-- KPI-05: Concurrencia Promedio -->
+<div class="kpi-card-selectable comic-notched-card p-3.5 relative" id="kpi-5" onclick="toggleKpiCard(5, 'Concurrencia Promedio')"><span class="corner-diamond corner-diamond-tl"></span><span class="corner-diamond corner-diamond-tr"></span><span class="corner-diamond corner-diamond-bl"></span><span class="corner-diamond corner-diamond-br"></span><div class="flex items-center justify-between text-xs font-mono mb-1.5"><span class="font-cinzel font-bold text-sumi-black dark:text-stone-200 flex items-center gap-1"><span class="w-1.5 h-1.5 bg-vermilion rotate-45 inline-block"></span> KPI-05 CONCURRENCIA</span><span class="text-amber-700 dark:text-amber-400 font-mono font-bold text-[10px]">DENSIDAD BAJA</span></div><div class="text-2xl font-mono font-bold text-sumi-black dark:text-stone-100" id="valKpi5">2.35 <span class="text-xs font-bold text-sumi-black dark:text-stone-300 font-sans">postores/ít.</span></div><div class="text-[10px] font-serif text-sumi-black dark:text-stone-300 italic font-medium mt-0.5">Promedio nacional de postores por procedimiento</div><div class="mt-2.5 h-1 w-full bg-washi-border dark:bg-sumi-border overflow-hidden"><div class="h-full bg-sumi-black dark:bg-stone-300 w-[47%]"></div></div></div>
+<!-- KPI-06: Tasa de Postor Único - Bandera Roja Crítica -->
+<div class="kpi-card-selectable ceremonial-frame-card p-3.5 relative overflow-hidden ring-1 ring-vermilion/40" id="kpi-6" onclick="toggleKpiCard(6, 'Tasa de Postor Único')"><span class="corner-diamond corner-diamond-tl bg-vermilion w-2 h-2"></span><span class="corner-diamond corner-diamond-tr bg-vermilion w-2 h-2"></span><span class="corner-diamond corner-diamond-bl bg-vermilion w-2 h-2"></span><span class="corner-diamond corner-diamond-br bg-vermilion w-2 h-2"><span class="absolute -inset-0.5 bg-vermilion animate-ping rounded-full opacity-60"></span></span><div class="flex items-center justify-between text-xs font-mono text-vermilion mb-1.5 font-bold"><span class="font-cinzel flex items-center gap-1"><span class="w-1.5 h-1.5 bg-vermilion rotate-45 inline-block"></span> KPI-06 POSTOR ÚNICO</span><span class="px-1.5 py-0.2 border border-vermilion text-[9px] bg-vermilion text-white font-mono flex items-center gap-1">CRÍTICO <span class="text-[8px]">✦</span></span></div><div class="text-2xl font-mono font-bold text-vermilion" id="valKpi6">38.2% <span class="text-xs font-normal font-sans text-stone-600 dark:text-stone-400">(Riesgo Alto)</span></div><div class="text-[10px] font-serif text-vermilion/90 italic mt-0.5 font-medium">Licitaciones adjudicadas con un solo postor en puja</div><div class="mt-2.5 h-1 w-full bg-vermilion/20 overflow-hidden"><div class="h-full bg-vermilion w-[38.2%]"></div></div></div>
+</div>
+</section>
+<!-- END: KPI CARDS SECTION -->
+<!-- BEGIN: Grid 60% Left Center Analytics + 40% Lateral Bento Column -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-7 items-start">
+<!-- ================= LEFT / CENTER COLUMN (60% -> col-span-7) ================= -->
+<section class="lg:col-span-7 space-y-7">
+<!-- GRAF-01: Evolución Temporal de Convocatorias vs Contratos (Mixto: Barras Volumen + Línea Monto) -->
+<div class="comic-panel corner-bracket p-5 sm:p-6">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-washi-border dark:border-sumi-border pb-3 mb-4 gap-2">
+<div>
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-mono text-vermilion uppercase tracking-widest font-bold">GRAF-01 // AUDITORÍA CRONOLÓGICA CONCURRENTE</span>
+<span class="hanko-seal text-[8px] px-1 py-0.2">鑑 AUDIT</span>
+</div>
+<h2 class="font-cinzel text-lg font-bold text-sumi-black dark:text-stone-100 uppercase tracking-wide">
+              Evolución Temporal de Convocatorias vs Formalizados
+            </h2>
+</div>
+<div class="flex items-center gap-3 text-[11px] font-mono">
+<span class="flex items-center gap-1.5">
+<span class="w-3 h-2 bg-stone-300 dark:bg-stone-700 border border-stone-400 inline-block"></span> Convocatorias (Barras)
+            </span>
+<span class="flex items-center gap-1.5">
+<span class="w-3 h-1 bg-vermilion inline-block"></span> Monto Formalizado (PEN Millones)
+            </span>
+</div>
+</div>
+<!-- SVG Mixed Chart: Bars (Convocatorias) + Crimson Area Polyline (Montos) -->
+<div class="relative w-full h-72">
+<svg class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 740 260">
+<defs>
+<linearGradient id="crimsonGradientLarge" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#9E1B1E" stop-opacity="0.35"></stop>
+<stop offset="100%" stop-color="#9E1B1E" stop-opacity="0.0"></stop>
+</linearGradient>
+<pattern height="40" id="gridSubtle" patternUnits="userSpaceOnUse" width="60">
+<path class="text-stone-300/40 dark:text-stone-800/60" d="M 60 0 L 0 0 0 40" fill="none" stroke="currentColor" stroke-width="0.5"></path>
+</pattern>
+</defs>
+<!-- Grid background -->
+<rect fill="url(#gridSubtle)" height="210" width="740"></rect>
+<!-- Y Guides -->
+<line class="text-stone-300 dark:text-stone-800" stroke="currentColor" stroke-dasharray="2 2" stroke-width="0.75" x1="0" x2="740" y1="50" y2="50"></line>
+<line class="text-stone-300 dark:text-stone-800" stroke="currentColor" stroke-dasharray="2 2" stroke-width="0.75" x1="0" x2="740" y1="100" y2="100"></line>
+<line class="text-stone-300 dark:text-stone-800" stroke="currentColor" stroke-dasharray="2 2" stroke-width="0.75" x1="0" x2="740" y1="150" y2="150"></line>
+<!-- BARS: Volumen Mensual de Convocatorias -->
+<!-- ENE --> <rect fill="#C5A059" height="65" opacity="0.35" rx="1" width="20" x="35" y="145"></rect>
+<!-- FEB --> <rect fill="#C5A059" height="80" opacity="0.35" rx="1" width="20" x="95" y="130"></rect>
+<!-- MAR --> <rect fill="#C5A059" height="75" opacity="0.35" rx="1" width="20" x="155" y="135"></rect>
+<!-- ABR --> <rect fill="#C5A059" height="110" opacity="0.35" rx="1" width="20" x="215" y="100"></rect>
+<!-- MAY --> <rect fill="#C5A059" height="95" opacity="0.35" rx="1" width="20" x="275" y="115"></rect>
+<!-- JUN --> <rect fill="#C5A059" height="130" opacity="0.35" rx="1" width="20" x="335" y="80"></rect>
+<!-- JUL --> <rect fill="#C5A059" height="120" opacity="0.35" rx="1" width="20" x="395" y="90"></rect>
+<!-- AGO --> <rect fill="#C5A059" height="145" opacity="0.35" rx="1" width="20" x="455" y="65"></rect>
+<!-- SET --> <rect fill="#C5A059" height="140" opacity="0.35" rx="1" width="20" x="515" y="70"></rect>
+<!-- OCT --> <rect fill="#C5A059" height="165" opacity="0.45" rx="1" width="20" x="575" y="45"></rect>
+<!-- NOV --> <rect fill="#C5A059" height="155" opacity="0.45" rx="1" width="20" x="635" y="55"></rect>
+<!-- DIC --> <rect fill="#9E1B1E" height="185" opacity="0.65" rx="1" width="20" x="695" y="25"></rect>
+<!-- Area Fill under curve of Montos Adjudicados -->
+<polygon fill="url(#crimsonGradientLarge)" points="45,170 105,150 165,160 225,110 285,135 345,90 405,105 465,70 525,80 585,45 645,60 705,32 705,210 45,210"></polygon>
+<!-- Crimson Polyline (Monto Formalizado S/) -->
+<polyline fill="none" points="45,170 105,150 165,160 225,110 285,135 345,90 405,105 465,70 525,80 585,45 645,60 705,32" stroke="#9E1B1E" stroke-width="2.75"></polyline>
+<!-- Node Points with Diamond marks -->
+<g class="fill-vermilion">
+<polygon points="45,167 48,170 45,173 42,170"></polygon>
+<polygon points="105,147 108,150 105,153 102,150"></polygon>
+<polygon points="165,157 168,160 165,163 162,160"></polygon>
+<polygon points="225,107 228,110 225,113 222,110"></polygon>
+<polygon points="285,132 288,135 285,138 282,135"></polygon>
+<polygon points="345,87 348,90 345,93 342,90"></polygon>
+<polygon points="405,102 408,105 405,108 402,105"></polygon>
+<polygon points="465,67 468,70 465,73 462,70"></polygon>
+<polygon points="525,77 528,80 525,83 522,80"></polygon>
+<polygon points="585,42 588,45 585,48 582,45"></polygon>
+<polygon points="645,57 648,60 645,63 642,60"></polygon>
+<!-- Peak alert point in December -->
+<circle cx="705" cy="32" fill="#9E1B1E" r="5" stroke="#FFF" stroke-width="2"></circle>
+</g>
+<!-- Month Labels -->
+<text fill="currentColor" font-family="'JetBrains Mono', monospace" font-size="10" opacity="0.6" text-anchor="middle" x="45" y="235">ENE</text>
+<text fill="currentColor" font-family="'JetBrains Mono', monospace" font-size="10" opacity="0.6" text-anchor="middle" x="105" y="235">FEB</text>
+<text fill="currentColor" font-family="'JetBrains Mono', monospace" font-size="10" opacity="0.6" text-anchor="middle" x="165" y="235">MAR</text>
+<text fill="currentColor" font-family="'JetBrains Mono', monospace" font-size="10" opacity="0.6" text-anchor="middle" x="225" y="235">ABR</text>
+<text fill="currentColor" font-family="'JetBrains Mono', monospace" font-size="10" opacity="0.6" text-anchor="middle" x="285" y="235">MAY</text>
+<text fill="currentColor" font-family="'JetBrains Mono', monospace" font-size="10" opacity="0.6" text-anchor="middle" x="345" y="235">JUN</text>
+<text fill="currentColor" font-family="'JetBrains Mono', monospace" font-size="10" opacity="0.6" text-anchor="middle" x="405" y="235">JUL</text>
+<text fill="currentColor" font-family="'JetBrains Mono', monospace" font-size="10" opacity="0.6" text-anchor="middle" x="465" y="235">AGO</text>
+<text fill="currentColor" font-family="'JetBrains Mono', monospace" font-size="10" opacity="0.6" text-anchor="middle" x="525" y="235">SET</text>
+<text fill="currentColor" font-family="'JetBrains Mono', monospace" font-size="10" opacity="0.6" text-anchor="middle" x="585" y="235">OCT</text>
+<text fill="currentColor" font-family="'JetBrains Mono', monospace" font-size="10" opacity="0.6" text-anchor="middle" x="645" y="235">NOV</text>
+<text fill="#9E1B1E" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" text-anchor="middle" x="705" y="235">DIC ✦</text>
+</svg>
+</div>
+<div class="mt-2 pt-2 border-t border-washi-border/70 dark:border-sumi-border/70 flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs font-mono text-sumi-black dark:text-stone-200 font-medium gap-1"><span class="">HALLAZGO FORENSE: Cierre Q4 concentra el 41.8% del devengado anual (pico acelerado en Dic).</span><span class="text-vermilion font-bold">ALERTA ANOMALÍA: +74% en Diciembre</span></div>
+</div>
+<!-- GRAF-03: TOP CONTRATISTAS Y CONSORCIOS FISCALIZADOS CON TOGGLE REAL INTERACTIVO -->
+<div class="comic-panel corner-bracket p-5 sm:p-6">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-washi-border dark:border-sumi-border pb-3 mb-4 gap-3">
+<div>
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-mono text-vermilion uppercase tracking-widest font-bold">GRAF-03 // CONCENTRACIÓN DE GANADORES</span>
+<span class="hanko-seal text-[8px] px-1 py-0.2">武 FORENSE</span>
+</div>
+<h2 class="font-cinzel text-lg font-bold text-sumi-black dark:text-stone-100 uppercase tracking-wide">
+              Top Contratistas &amp; Consorcios Auditados
+            </h2>
+</div>
+<!-- REAL INTERACTIVE TOGGLE: [Por Monto Adjudicado S/] vs [Por Cantidad de Contratos] -->
+<div class="inline-flex p-0.5 border border-washi-border dark:border-sumi-border bg-white dark:bg-sumi-deep rounded-sm text-xs font-mono">
+<button class="px-2.5 py-1 font-bold bg-vermilion text-white shadow-sm transition" id="toggleBtnMonto" onclick="switchContractorView('monto')">
+              Por Monto Adjudicado (S/)
+            </button>
+<button class="px-2.5 py-1 text-sumi-black dark:text-stone-300 hover:text-vermilion transition" id="toggleBtnQty" onclick="switchContractorView('qty')">
+              Por Cantidad de Contratos
+            </button>
+</div>
+</div>
+<!-- Dynamic Container for Top 10 Contractors -->
+<div class="space-y-3 font-mono text-xs" id="contractorsList">
+      <div class="p-3 bg-white/70 dark:bg-sumi-surface/50 border border-washi-border dark:border-sumi-border transition hover:border-vermilion">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-1.5 mb-1.5">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="font-bold text-sumi-black dark:text-stone-200">01. CONSORCIO VIAL DEL SUR</span>
+            <span class="text-[10px] text-stone-400">(RUC: 20601849182)</span>
+            <span class="px-1.5 py-0.2 text-[9px] bg-vermilion text-white font-bold">
+              CONSORCIO
+            </span>
+          </div>
+          <div class="font-mono text-vermilion font-bold whitespace-nowrap">
+            S/ 482.4 MM (89.5% Éxito)
+          </div>
+        </div>
+        <div class="w-full bg-stone-200 dark:bg-stone-800 h-2">
+          <div class="bg-vermilion h-2 transition-all duration-500" style="width: 95%"></div>
+        </div>
+        <div class="flex justify-between items-center text-[10px] font-serif text-washi-muted dark:text-stone-400 mt-1">
+          <span class="">17 de 19 licitaciones | Entidad: MTC Provías</span>
+          <span class="font-mono text-vermilion font-bold">POSTOR ÚNICO (15/17)</span>
+        </div>
+      </div>
+    
+      <div class="p-3 bg-white/70 dark:bg-sumi-surface/50 border border-washi-border dark:border-sumi-border transition hover:border-vermilion">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-1.5 mb-1.5">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="font-bold text-sumi-black dark:text-stone-200">02. CONSTRUCTORA IMPERIAL ANDINA S.A.C.</span>
+            <span class="text-[10px] text-stone-400">(RUC: 20492817291)</span>
+            <span class="px-1.5 py-0.2 text-[9px] bg-stone-200 dark:bg-stone-700 text-sumi-black dark:text-stone-200">
+              INDIVIDUAL
+            </span>
+          </div>
+          <div class="font-mono text-vermilion font-bold whitespace-nowrap">
+            S/ 319.8 MM (76.2% Éxito)
+          </div>
+        </div>
+        <div class="w-full bg-stone-200 dark:bg-stone-800 h-2">
+          <div class="bg-vermilion h-2 transition-all duration-500" style="width: 75%"></div>
+        </div>
+        <div class="flex justify-between items-center text-[10px] font-serif text-washi-muted dark:text-stone-400 mt-1">
+          <span class="">16 licitaciones en GORE Cusco / Descalificaciones masivas</span>
+          <span class="font-mono text-vermilion font-bold">BAJO SOSPECHA</span>
+        </div>
+      </div>
+    
+      <div class="p-3 bg-white/70 dark:bg-sumi-surface/50 border border-washi-border dark:border-sumi-border transition hover:border-vermilion">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-1.5 mb-1.5">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="font-bold text-sumi-black dark:text-stone-200">03. SERVICIOS INTEGRALES BIOMÉDICOS S.A.</span>
+            <span class="text-[10px] text-stone-400">(RUC: 20551029482)</span>
+            <span class="px-1.5 py-0.2 text-[9px] bg-stone-200 dark:bg-stone-700 text-sumi-black dark:text-stone-200">
+              INDIVIDUAL
+            </span>
+          </div>
+          <div class="font-mono text-vermilion font-bold whitespace-nowrap">
+            S/ 245.1 MM (92% Éxito)
+          </div>
+        </div>
+        <div class="w-full bg-stone-200 dark:bg-stone-800 h-2">
+          <div class="bg-vermilion h-2 transition-all duration-500" style="width: 62%"></div>
+        </div>
+        <div class="flex justify-between items-center text-[10px] font-serif text-washi-muted dark:text-stone-400 mt-1">
+          <span class="">46 adjudicaciones directas en MINSA / EsSalud</span>
+          <span class="font-mono text-vermilion font-bold">CATÁLOGO EXCLUSIVO</span>
+        </div>
+      </div>
+    
+      <div class="p-3 bg-white/70 dark:bg-sumi-surface/50 border border-washi-border dark:border-sumi-border transition hover:border-vermilion">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-1.5 mb-1.5">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="font-bold text-sumi-black dark:text-stone-200">04. CONSORCIO ENERGÉTICO DEL CENTRO</span>
+            <span class="text-[10px] text-stone-400">(RUC: 20603348191)</span>
+            <span class="px-1.5 py-0.2 text-[9px] bg-vermilion text-white font-bold">
+              CONSORCIO
+            </span>
+          </div>
+          <div class="font-mono text-vermilion font-bold whitespace-nowrap">
+            S/ 218.5 MM (84.1% Éxito)
+          </div>
+        </div>
+        <div class="w-full bg-stone-200 dark:bg-stone-800 h-2">
+          <div class="bg-vermilion h-2 transition-all duration-500" style="width: 55%"></div>
+        </div>
+        <div class="flex justify-between items-center text-[10px] font-serif text-washi-muted dark:text-stone-400 mt-1">
+          <span class="">11 licitaciones Electrocentro / Sin concurrencia</span>
+          <span class="font-mono text-vermilion font-bold">POSTOR ÚNICO (9/11)</span>
+        </div>
+      </div>
+    
+      <div class="p-3 bg-white/70 dark:bg-sumi-surface/50 border border-washi-border dark:border-sumi-border transition hover:border-vermilion">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-1.5 mb-1.5">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="font-bold text-sumi-black dark:text-stone-200">05. CORPORACIÓN DE INGENIERÍA NORTE S.A.</span>
+            <span class="text-[10px] text-stone-400">(RUC: 20104829103)</span>
+            <span class="px-1.5 py-0.2 text-[9px] bg-stone-200 dark:bg-stone-700 text-sumi-black dark:text-stone-200">
+              INDIVIDUAL
+            </span>
+          </div>
+          <div class="font-mono text-vermilion font-bold whitespace-nowrap">
+            S/ 189.2 MM (71.5% Éxito)
+          </div>
+        </div>
+        <div class="w-full bg-stone-200 dark:bg-stone-800 h-2">
+          <div class="bg-vermilion h-2 transition-all duration-500" style="width: 48%"></div>
+        </div>
+        <div class="flex justify-between items-center text-[10px] font-serif text-washi-muted dark:text-stone-400 mt-1">
+          <span class="">14 obras de saneamiento en GORE Piura y La Libertad</span>
+          <span class="font-mono text-vermilion font-bold">RECURRENCIA ALTA</span>
+        </div>
+      </div>
+    </div>
+<div class="mt-4 pt-3 border-t border-washi-border dark:border-sumi-border flex items-center justify-between text-[11px] font-serif italic text-sumi-black dark:text-stone-200 font-medium"><span class="">* Clasificación forense: Consorcios ad-hoc con recurrencia mayor a 3 adjudicaciones bajo el mismo comité especial.</span><span class="font-mono text-vermilion font-bold">7 de 10 con Bandera de Postor Único</span></div>
+</div>
+<!-- PROBLEMÁTICA FASE 1: Mini-Visualización de Postores de Relleno & Embudo de Conversión -->
+<div class="comic-panel corner-bracket p-5 sm:p-6 bg-gradient-to-r from-transparent via-vermilion/5 to-transparent">
+<div class="flex items-center justify-between border-b border-washi-border dark:border-sumi-border pb-3 mb-3">
+<div>
+<span class="text-[10px] font-mono text-vermilion uppercase tracking-widest font-bold">IND-P4.1 // FASE 1: DESCALIFICACIONES &amp; POSTORES DE RELLENO</span>
+<h3 class="font-cinzel text-base font-bold text-sumi-black dark:text-stone-100 uppercase">
+              Embudo de Competencia &amp; Filtro de Exclusión
+            </h3>
+</div>
+<span class="px-2 py-0.5 border border-vermilion text-[10px] font-mono text-vermilion font-bold bg-white dark:bg-sumi-surface">
+            ANÁLISIS DE PUJA
+          </span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-center font-mono">
+<div class="p-2.5 bg-white/70 dark:bg-sumi-surface/50 border border-washi-border dark:border-sumi-border">
+<div class="text-[10px] text-washi-muted dark:text-stone-400">1. REGISTRO PARTICIPANTES</div>
+<div class="text-base font-bold text-sumi-black dark:text-stone-200 mt-1">100% (7.4 prom.)</div>
+<div class="text-[9px] text-stone-500 mt-0.5">Expresión de interés</div>
+</div>
+<div class="p-2.5 bg-white/70 dark:bg-sumi-surface/50 border border-washi-border dark:border-sumi-border">
+<div class="text-[10px] text-washi-muted dark:text-stone-400">2. PRESENTAN OFERTAS</div>
+<div class="text-base font-bold text-amber-700 dark:text-amber-400 mt-1">42.1% (3.1 prom.)</div>
+<div class="text-[9px] text-stone-500 mt-0.5">Barrera de requisitos</div>
+</div>
+<div class="p-2.5 bg-white/70 dark:bg-sumi-surface/50 border border-washi-border dark:border-sumi-border">
+<div class="text-[10px] text-washi-muted dark:text-stone-400">3. OFERTAS ADMISIBLES</div>
+<div class="text-base font-bold text-vermilion mt-1">18.5% (1.37 prom.)</div>
+<div class="text-[9px] text-vermilion font-semibold mt-0.5">Descalificaciones técnicas</div>
+</div>
+<div class="p-2.5 bg-white/70 dark:bg-sumi-surface/50 border border-vermilion/50 bg-vermilion/10">
+<div class="text-[10px] text-vermilion font-bold">4. ADJUDICADO (PUJA)</div>
+<div class="text-base font-bold text-vermilion mt-1">38.2% Postor Único</div>
+<div class="text-[9px] text-stone-600 dark:text-stone-300 mt-0.5">Sin competencia real</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ================= RIGHT COLUMN (40% -> col-span-5) ================= -->
+<aside class="lg:col-span-5 space-y-7">
+<!-- Ronin Guardian / Commander Graphic Emblem & Action Panel -->
+<div class="comic-panel corner-bracket p-6 relative overflow-hidden bg-gradient-to-b from-washi-surface to-washi-base dark:from-sumi-surface dark:to-sumi-deep text-center">
+<!-- Subtle Red Sun Glow -->
+<div class="absolute -top-10 -right-10 w-56 h-56 rounded-full bg-vermilion/10 dark:bg-vermilion/20 filter blur-3xl pointer-events-none"></div>
+<div class="relative z-10 flex flex-col items-center">
+<div class="relative mb-3">
+<!-- Cinnabar Red Solar Disc with Bushido Crest -->
+<div class="w-32 h-32 rounded-full bg-vermilion flex items-center justify-center p-1 shadow-vermilion-glow">
+<div class="w-full h-full octagon-frame bg-sumi-black flex items-center justify-center border-2 border-gold-crest/60 p-2">
+<!-- Tsuba / Crossed Katana & Scales of Justice Mon -->
+<svg class="w-16 h-16 text-washi-base" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24">
+<circle cx="12" cy="12" r="10" stroke="#DFBD76" stroke-dasharray="2 3" stroke-width="1"></circle>
+<path d="M12 2v20M17 7l-5 5-5-5M17 17l-5-5-5 5" stroke="#FFFFFF" stroke-linecap="round" stroke-width="1.5"></path>
+<circle cx="12" cy="12" fill="#9E1B1E" r="2.5"></circle>
+<line stroke="#DFBD76" stroke-width="1.5" x1="7" x2="17" y1="9" y2="9"></line>
+</svg>
+</div>
+</div>
+<!-- Traditional Inkan Red Seal -->
+<div class="absolute -bottom-1 -right-2 hanko-seal text-[9px] bg-white dark:bg-sumi-black px-1.5 py-0.5 shadow-sm font-mono">
+              検閲 2024
+            </div>
+</div>
+<div class="text-xs font-mono tracking-widest text-vermilion uppercase font-bold mb-0.5">
+            GUARDIÁN DEL ERARIO PÚBLICO
+          </div>
+<h3 class="font-cinzel text-2xl font-black text-sumi-black dark:text-stone-100 tracking-wider">
+            RONIN COMMANDER
+          </h3>
+<p class="font-serif italic text-xs text-sumi-black dark:text-stone-200 font-medium max-w-sm mt-1">"Una sola espada corta la colusión; la transparencia forense algorítmica no conoce contemplaciones ante el desvío presupuestal."</p>
+<!-- Cut Evidence Katana Button -->
+<button class="mt-4 w-full py-2.5 px-4 bg-vermilion hover:bg-vermilion-dark text-white font-cinzel text-xs font-bold tracking-widest uppercase transition shadow-sm border border-vermilion-light flex items-center justify-center gap-2" onclick="openModal('Protocolo Forense Bushidō Ejecutado: 1,280 expedientes indexados. Criptograma SHA-256 verificado en la blockchain fiscal del OECE/SEACE.')">
+<span class="">EJECUTAR CORTE DE EVIDENCIA</span>
+<span class="text-sm">✦</span>
+</button>
+</div>
+</div>
+<!-- GRAF-02: Distribución por Objeto Contractual (Donut / Enso Ring Japonés) -->
+<div class="comic-panel corner-bracket p-5 sm:p-6">
+<div class="flex items-center justify-between border-b border-washi-border dark:border-sumi-border pb-3 mb-4">
+<div>
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-mono text-vermilion uppercase tracking-widest font-bold">GRAF-02 // TIPOLOGÍA CONTRACTUAL</span>
+<span class="hanko-seal text-[8px] px-1 py-0.2">円 ENSO</span>
+</div>
+<h3 class="font-cinzel text-base font-bold text-sumi-black dark:text-stone-100 uppercase tracking-wide">
+              Distribución por Objeto
+            </h3>
+</div>
+<span class="text-xs font-mono text-washi-muted dark:text-stone-400 font-semibold">100% SEACE 2024</span>
+</div>
+<div class="flex flex-col sm:flex-row items-center justify-between gap-5">
+<!-- Circular Enso Ring Chart -->
+<div class="relative w-36 h-36 flex-shrink-0">
+<svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+<!-- Background Ring -->
+<circle class="text-stone-200 dark:text-stone-800" cx="18" cy="18" fill="none" r="14" stroke="currentColor" stroke-width="4.5"></circle>
+<!-- Segment 1: Bienes (42%) -> stroke-dasharray="36.96 51.04" -->
+<circle cx="18" cy="18" fill="none" r="14" stroke="#9E1B1E" stroke-dasharray="36.96 51.04" stroke-dashoffset="0" stroke-width="4.5"></circle>
+<!-- Segment 2: Obras (33%) -> stroke-dasharray="29.04 58.96" -->
+<circle cx="18" cy="18" fill="none" r="14" stroke="#C5A059" stroke-dasharray="29.04 58.96" stroke-dashoffset="-36.96" stroke-width="4.5"></circle>
+<!-- Segment 3: Servicios (20%) -> stroke-dasharray="17.6 70.4" -->
+<circle class="dark:stroke-stone-300" cx="18" cy="18" fill="none" r="14" stroke="#111116" stroke-dasharray="17.6 70.4" stroke-dashoffset="-66.0" stroke-width="4.5"></circle>
+<!-- Segment 4: Consultorías (5%) -> stroke-dasharray="4.4 83.6" -->
+<circle cx="18" cy="18" fill="none" r="14" stroke="#7F786B" stroke-dasharray="4.4 83.6" stroke-dashoffset="-83.6" stroke-width="4.5"></circle>
+</svg>
+<!-- Center Legend -->
+<div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+<span class="text-xs font-mono font-bold text-sumi-black dark:text-stone-100">S/ 48.9B</span>
+<span class="text-[9px] font-serif italic text-sumi-black dark:text-stone-300 font-semibold">Total Liquidado</span>
+</div>
+</div>
+<!-- Legend breakdown list -->
+<div class="space-y-2 w-full text-xs font-mono">
+<div class="flex items-center justify-between border-b border-washi-border/60 dark:border-sumi-border/60 pb-1">
+<span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-vermilion"></span> BIENES</span>
+<span class="font-bold">42.0% <span class="text-stone-400 font-normal">(S/ 20.5B)</span></span>
+</div>
+<div class="flex items-center justify-between border-b border-washi-border/60 dark:border-sumi-border/60 pb-1">
+<span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-gold-crest"></span> OBRAS CIVILES</span>
+<span class="font-bold">33.0% <span class="text-stone-400 font-normal">(S/ 16.1B)</span></span>
+</div>
+<div class="flex items-center justify-between border-b border-washi-border/60 dark:border-sumi-border/60 pb-1">
+<span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-sumi-black dark:bg-stone-300"></span> SERVICIOS</span>
+<span class="font-bold">20.0% <span class="text-stone-400 font-normal">(S/ 9.8B)</span></span>
+</div>
+<div class="flex items-center justify-between">
+<span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-stone-500"></span> CONSULTORÍAS</span>
+<span class="font-bold">5.0% <span class="text-stone-400 font-normal">(S/ 2.4B)</span></span>
+</div>
+</div>
+</div>
+</div>
+<!-- GRAF-04: Desglose Territorial y Concentración Ubigeo -->
+<div class="comic-panel corner-bracket p-5 sm:p-6">
+<div class="flex items-center justify-between border-b border-washi-border dark:border-sumi-border pb-3 mb-4">
+<div>
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-mono text-vermilion uppercase tracking-widest font-bold">GRAF-04 // UBIGEO CRÍTICO</span>
+<span class="hanko-seal text-[8px] px-1 py-0.2">地 REGIONES</span>
+</div>
+<h3 class="font-cinzel text-base font-bold text-sumi-black dark:text-stone-100 uppercase tracking-wide">
+              Concentración Territorial
+            </h3>
+</div>
+<span class="text-[11px] font-mono text-vermilion font-bold">TOP 4 REGIONES</span>
+</div>
+<div class="space-y-3 font-mono text-xs">
+<!-- Lima -->
+<div>
+<div class="flex justify-between mb-1">
+<span class="font-bold text-sumi-black dark:text-stone-200">01. LIMA &amp; CALLAO (Centralismo)</span>
+<span class="text-vermilion font-bold">S/ 24,180 MM (49.4%)</span>
+</div>
+<div class="w-full bg-stone-200 dark:bg-stone-800 h-2">
+<div class="bg-vermilion h-2" style="width: 49.4%"></div>
+</div>
+<div class="flex justify-between text-[10px] font-serif text-washi-muted dark:text-stone-400 mt-0.5">
+<span class="">52,140 procesos formalizados</span>
+<span class="font-mono text-vermilion">34.2% Postor Único</span>
+</div>
+</div>
+<!-- Cusco -->
+<div>
+<div class="flex justify-between mb-1">
+<span class="font-bold text-sumi-black dark:text-stone-200">02. CUSCO (Canon Gasífero)</span>
+<span class="text-sumi-black dark:text-stone-200 font-bold">S/ 6,420 MM (13.1%)</span>
+</div>
+<div class="w-full bg-stone-200 dark:bg-stone-800 h-2">
+<div class="bg-gold-crest h-2" style="width: 13.1%"></div>
+</div>
+<div class="flex justify-between text-[10px] font-serif text-washi-muted dark:text-stone-400 mt-0.5">
+<span class="">La Convención y Espinar con alta concentración</span>
+<span class="font-mono text-vermilion font-bold">48.9% Postor Único</span>
+</div>
+</div>
+<!-- Arequipa -->
+<div>
+<div class="flex justify-between mb-1">
+<span class="font-bold text-sumi-black dark:text-stone-200">03. AREQUIPA (Sur Minero)</span>
+<span class="text-sumi-black dark:text-stone-200 font-bold">S/ 4,890 MM (10.0%)</span>
+</div>
+<div class="w-full bg-stone-200 dark:bg-stone-800 h-2">
+<div class="bg-stone-500 h-2" style="width: 10%"></div>
+</div>
+<div class="flex justify-between text-[10px] font-serif text-washi-muted dark:text-stone-400 mt-0.5">
+<span class="">Obras viales y saneamiento</span>
+<span class="font-mono text-stone-600 dark:text-stone-300">29.8% Postor Único</span>
+</div>
+</div>
+<!-- Áncash -->
+<div>
+<div class="flex justify-between mb-1">
+<span class="font-bold text-sumi-black dark:text-stone-200">04. ÁNCASH (Canon Minero)</span>
+<span class="text-sumi-black dark:text-stone-200 font-bold">S/ 3,740 MM (7.6%)</span>
+</div>
+<div class="w-full bg-stone-200 dark:bg-stone-800 h-2">
+<div class="bg-stone-400 h-2" style="width: 7.6%"></div>
+</div>
+<div class="flex justify-between text-[10px] font-serif text-washi-muted dark:text-stone-400 mt-0.5">
+<span class="">Huaraz y Santa (Chimbote)</span>
+<span class="font-mono text-vermilion">44.1% Postor Único</span>
+</div>
+</div>
+</div>
+<div class="mt-4 p-2.5 bg-washi-surface dark:bg-sumi-surface border border-washi-border dark:border-sumi-border text-[11px] font-serif italic text-sumi-black dark:text-stone-200 font-medium flex items-start gap-2"><span class="text-vermilion font-bold text-xs">▲</span><span class=""><strong>Alerta Territorial:</strong> El 80.1% de todo el presupuesto nacional adjudicado se concentra en solo 4 departamentos, evidenciando una brecha de fiscalización periférica en provincias amazónicas y andinas.</span></div>
+</div>
+</aside>
+</div>
+<!-- END: Grid 60% Left Analytics + 40% Lateral Bento -->
+<!-- BEGIN: MASTER DRILL-DOWN FORENSIC TABLE (EP-05 / EP-06) -->
+<section class="comic-panel corner-bracket p-5 sm:p-6 lg:p-7">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between border-b border-washi-border dark:border-sumi-border pb-4 mb-4 gap-4">
+<div>
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-mono text-vermilion uppercase tracking-widest font-bold">REGISTRO DE EXPEDIENTES BAJO FISCALIZACIÓN FORENSE</span>
+<span class="text-xs">✦</span>
+<span class="hanko-seal text-[8px] px-1.5 py-0.2">密 RESERVADO</span>
+</div>
+<h2 class="font-cinzel text-xl sm:text-2xl font-black text-sumi-black dark:text-stone-100 uppercase tracking-wider">
+          Expedientes de Contratación SEACE con Hallazgo de Riesgo
+        </h2>
+</div>
+<div class="flex flex-wrap items-center gap-2.5">
+<input class="text-xs font-mono px-3 py-1.5 bg-white dark:bg-sumi-surface border border-washi-border dark:border-sumi-border w-64 focus:ring-vermilion focus:border-vermilion" id="tableSearchInput" onkeyup="searchTable()" placeholder="Filtrar por RUC, Entidad o Código..." type="text">
+<button class="px-3.5 py-1.5 bg-sumi-black dark:bg-stone-200 text-white dark:text-sumi-black font-cinzel text-xs font-bold uppercase tracking-wider hover:bg-vermilion hover:text-white transition" onclick="searchTable()">
+          FILTRAR REGISTROS
+        </button>
+</div>
+</div>
+<!-- Table Responsive Wrapper -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse text-xs font-mono" id="forensicTable">
+<thead>
+<tr class="border-b-2 border-vermilion/80 bg-washi-surface/90 dark:bg-sumi-surface/90 font-cinzel text-sumi-black dark:text-stone-200 tracking-wider">
+<th class="py-3 px-3">CÓDIGO CONVOCATORIA</th>
+<th class="py-3 px-3">ENTIDAD CONVOCANTE</th>
+<th class="py-3 px-3">OBJETO CONTRACTUAL</th>
+<th class="py-3 px-3 text-center">POSTORES (PUJA)</th>
+<th class="py-3 px-3">GANADOR / ADJUDICATARIO</th>
+<th class="py-3 px-3 text-right">MONTO TOTAL ADJ.</th>
+<th class="py-3 px-3 text-center">BANDERA FORENSE</th>
+<th class="py-3 px-3 text-right">ACCIÓN FORENSE</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-washi-border dark:divide-sumi-border">
+<!-- Row 1 -->
+<tr class="hover:bg-vermilion/5 transition">
+<td class="py-3 px-3 font-bold text-sumi-black dark:text-stone-100">
+              LP-SM-12-2024-MTC
+              <span class="block text-[10px] font-normal text-stone-400 font-mono">Reg. SEACE #1948201</span>
+</td>
+<td class="py-3 px-3">
+<span class="font-semibold text-sumi-black dark:text-stone-200">PROVÍAS NACIONAL</span>
+<span class="block text-[10px] text-washi-muted dark:text-stone-400">Lima, MTC Central</span>
+</td>
+<td class="py-3 px-3 max-w-xs truncate" title="Mantenimiento Periódico del Corredor Vial Interoceánico Tramo IV">
+              Mantenimiento Periódico Corredor Vial Interoceánico IV
+            </td>
+<td class="py-3 px-3 text-center">
+<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-vermilion text-white font-mono font-bold text-[11px]" title="Solo 1 postor habilitado en puja final">
+                1
+              </span>
+</td>
+<td class="py-3 px-3">
+<span class="font-bold text-sumi-black dark:text-stone-100">CONSORCIO VIAL DEL SUR</span>
+<span class="block text-[10px] font-mono text-stone-400">RUC: 20601849182</span>
+</td>
+<td class="py-3 px-3 text-right font-bold text-sumi-black dark:text-stone-100">
+              S/ 142,500,000.00
+            </td>
+<td class="py-3 px-3 text-center">
+<span class="inline-block px-2 py-0.5 text-[10px] bg-vermilion text-white font-mono font-bold">
+                [POSTOR ÚNICO]
+              </span>
+</td>
+<td class="py-3 px-3 text-right">
+<button class="text-xs text-vermilion hover:underline font-bold font-cinzel" onclick="openModal('Auditoría Integral Expediente: LP-SM-12-2024-MTC | Entidad: Provías Nacional | RUC Ganador: 20601849182. Hallazgo: Descalificación técnica de 4 postores por foliación; adjudicado al 100.0% del valor referencial sin rebaja.')">
+                AUDITAR ✦
+              </button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-vermilion/5 transition">
+<td class="py-3 px-3 font-bold text-sumi-black dark:text-stone-100">
+              AS-SM-04-2024-GORE-CUS
+              <span class="block text-[10px] font-normal text-stone-400 font-mono">Reg. SEACE #1949112</span>
+</td>
+<td class="py-3 px-3">
+<span class="font-semibold text-sumi-black dark:text-stone-200">GOBIERNO REGIONAL DE CUSCO</span>
+<span class="block text-[10px] text-washi-muted dark:text-stone-400">Cusco - Sede Wanchaq</span>
+</td>
+<td class="py-3 px-3 max-w-xs truncate" title="Adquisición de Maquinaria Pesada para Emergencia Vial">
+              Adquisición de Maquinaria Pesada para Emergencia
+            </td>
+<td class="py-3 px-3 text-center">
+<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-700 text-white font-mono font-bold text-[11px]" title="1 postor tras descalificación masiva de 5">
+                1
+              </span>
+</td>
+<td class="py-3 px-3">
+<span class="font-bold text-sumi-black dark:text-stone-100">CONSTRUCTORA IMPERIAL S.A.C.</span>
+<span class="block text-[10px] font-mono text-stone-400">RUC: 20492817291</span>
+</td>
+<td class="py-3 px-3 text-right font-bold text-sumi-black dark:text-stone-100">
+              S/ 28,490,200.00
+            </td>
+<td class="py-3 px-3 text-center">
+<span class="inline-block px-2 py-0.5 text-[10px] bg-amber-700 text-white font-mono font-bold">
+                [DESCALIFICACIÓN MASIVA]
+              </span>
+</td>
+<td class="py-3 px-3 text-right">
+<button class="text-xs text-vermilion hover:underline font-bold font-cinzel" onclick="openModal('Auditoría Integral Expediente: AS-SM-04-2024-GORE-CUS | Entidad: GORE Cusco | RUC Ganador: 20492817291. Hallazgo: 5 postores excluidos en la misma hora del acta por supuesta omisión de traducción simple en catálogos.')">
+                AUDITAR ✦
+              </button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-vermilion/5 transition">
+<td class="py-3 px-3 font-bold text-sumi-black dark:text-stone-100">
+              CP-SM-08-2024-ESSALUD
+              <span class="block text-[10px] font-normal text-stone-400 font-mono">Reg. SEACE #1950221</span>
+</td>
+<td class="py-3 px-3">
+<span class="font-semibold text-sumi-black dark:text-stone-200">SEGURO SOCIAL DE SALUD (ESSALUD)</span>
+<span class="block text-[10px] text-washi-muted dark:text-stone-400">Lima - Red Prestacional</span>
+</td>
+<td class="py-3 px-3 max-w-xs truncate" title="Suministro Continuo de Oxígeno Medicinal Líquido">
+              Suministro Continuo de Oxígeno Medicinal Líquido
+            </td>
+<td class="py-3 px-3 text-center">
+<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-stone-700 text-white font-mono font-bold text-[11px]" title="4 postores válidos compitiendo">
+                4
+              </span>
+</td>
+<td class="py-3 px-3">
+<span class="font-bold text-sumi-black dark:text-stone-100">SERVICIOS BIOMÉDICOS DEL PERÚ S.A.</span>
+<span class="block text-[10px] font-mono text-stone-400">RUC: 20551029482</span>
+</td>
+<td class="py-3 px-3 text-right font-bold text-sumi-black dark:text-stone-100">
+              S/ 64,800,000.00
+            </td>
+<td class="py-3 px-3 text-center">
+<span class="inline-block px-2 py-0.5 text-[10px] bg-stone-700 text-white font-mono font-bold">
+                [CONCURRENCIA VÁLIDA]
+              </span>
+</td>
+<td class="py-3 px-3 text-right">
+<button class="text-xs text-vermilion hover:underline font-bold font-cinzel" onclick="openModal('Auditoría Expediente: CP-SM-08-2024-ESSALUD | Red Rebagliati | Proceso con 4 postores reales y 8.5% de rebaja frente al valor referencial. Huella criptográfica SHA-256 sin inconsistencias de tiempo.')">
+                AUDITAR ✦
+              </button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-vermilion/5 transition">
+<td class="py-3 px-3 font-bold text-sumi-black dark:text-stone-100">
+              LP-SM-02-2024-SEDAPAL
+              <span class="block text-[10px] font-normal text-stone-400 font-mono">Reg. SEACE #1952890</span>
+</td>
+<td class="py-3 px-3">
+<span class="font-semibold text-sumi-black dark:text-stone-200">SEDAPAL S.A.</span>
+<span class="block text-[10px] text-washi-muted dark:text-stone-400">Lima - La Atarjea</span>
+</td>
+<td class="py-3 px-3 max-w-xs truncate" title="Renovación de Colector Primario Cuenca San Juan de Lurigancho">
+              Renovación de Colector Primario San Juan de Lurigancho
+            </td>
+<td class="py-3 px-3 text-center">
+<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-vermilion text-white font-mono font-bold text-[11px]" title="Solo 1 postor habilitado">
+                1
+              </span>
+</td>
+<td class="py-3 px-3">
+<span class="font-bold text-sumi-black dark:text-stone-100">CONSORCIO HIDRÁULICO LIMA</span>
+<span class="block text-[10px] font-mono text-stone-400">RUC: 20604928174</span>
+</td>
+<td class="py-3 px-3 text-right font-bold text-sumi-black dark:text-stone-100">
+              S/ 91,240,000.00
+            </td>
+<td class="py-3 px-3 text-center">
+<span class="inline-block px-2 py-0.5 text-[10px] bg-vermilion text-white font-mono font-bold">
+                [POSTOR ÚNICO]
+              </span>
+</td>
+<td class="py-3 px-3 text-right">
+<button class="text-xs text-vermilion hover:underline font-bold font-cinzel" onclick="openModal('Auditoría Integral Expediente: LP-SM-02-2024-SEDAPAL | Entidad: Sedapal S.A. | Alerta: Ventana de presentación de ofertas reducida a 24 horas tras absolución de consultas complejas. Único postor consorciado.')">
+                AUDITAR ✦
+              </button>
+</td>
+</tr>
+<!-- Row 5 (Added for Technical Alignment EP-05/06) -->
+<tr class="hover:bg-vermilion/5 transition">
+<td class="py-3 px-3 font-bold text-sumi-black dark:text-stone-100">
+              LP-SM-07-2024-MINSA
+              <span class="block text-[10px] font-normal text-stone-400 font-mono">Reg. SEACE #1954310</span>
+</td>
+<td class="py-3 px-3">
+<span class="font-semibold text-sumi-black dark:text-stone-200">MINISTERIO DE SALUD (CENARES)</span>
+<span class="block text-[10px] text-washi-muted dark:text-stone-400">Lima - Almacén Central</span>
+</td>
+<td class="py-3 px-3 max-w-xs truncate" title="Adquisición de Vacunas y Cadena de Frío Especializada">
+              Adquisición de Cadena de Frío Especializada
+            </td>
+<td class="py-3 px-3 text-center">
+<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-vermilion text-white font-mono font-bold text-[11px]" title="Solo 1 postor en puja">
+                1
+              </span>
+</td>
+<td class="py-3 px-3">
+<span class="font-bold text-sumi-black dark:text-stone-100">DISTRIBUIDORA FARMA PERÚ S.A.C.</span>
+<span class="block text-[10px] font-mono text-stone-400">RUC: 20519384729</span>
+</td>
+<td class="py-3 px-3 text-right font-bold text-sumi-black dark:text-stone-100">
+              S/ 53,120,400.00
+            </td>
+<td class="py-3 px-3 text-center">
+<span class="inline-block px-2 py-0.5 text-[10px] bg-vermilion text-white font-mono font-bold">
+                [POSTOR ÚNICO]
+              </span>
+</td>
+<td class="py-3 px-3 text-right">
+<button class="text-xs text-vermilion hover:underline font-bold font-cinzel" onclick="openModal('Auditoría Integral Expediente: LP-SM-07-2024-MINSA | Entidad: CENARES | Adjudicación recurrente por tercer año consecutivo a la misma empresa con idénticas especificaciones de marca dirigidas.')">
+                AUDITAR ✦
+              </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination & Cryptographic Ledger Footer -->
+<div class="mt-4 pt-4 border-t border-washi-border dark:border-sumi-border flex flex-col sm:flex-row items-center justify-between text-xs font-mono text-sumi-black dark:text-stone-200 font-bold gap-3"><div class="flex items-center gap-2"><span class="">MOSTRANDO 1 - 5 DE 1,280 EXPEDIENTES EN PROTOCOLO DE FISCALIZACIÓN</span><span class="hanko-seal text-[8px] px-1 py-0.2">印 VÁLIDO</span></div><div class="flex items-center gap-1.5 font-bold"><button class="px-2.5 py-1 border border-washi-border dark:border-sumi-border bg-white dark:bg-sumi-deep hover:border-vermilion text-sumi-black dark:text-stone-200">« ANTERIOR</button><span class="px-2.5 py-1 bg-vermilion text-white font-bold">1</span><button class="px-2.5 py-1 border border-washi-border dark:border-sumi-border bg-white dark:bg-sumi-deep hover:border-vermilion text-sumi-black dark:text-stone-200">2</button><button class="px-2.5 py-1 border border-washi-border dark:border-sumi-border bg-white dark:bg-sumi-deep hover:border-vermilion text-sumi-black dark:text-stone-200">3</button><button class="px-2.5 py-1 border border-washi-border dark:border-sumi-border bg-white dark:bg-sumi-deep hover:border-vermilion text-sumi-black dark:text-stone-200">SIGUIENTE »</button></div></div>
+</section>
+<!-- END: MASTER DRILL-DOWN FORENSIC TABLE -->
+</main>
+<!-- END: MainContent -->
+<!-- BEGIN: Forensic Audit Modal -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden" id="forensicModal">
+<div class="comic-panel corner-bracket w-full max-w-xl p-6 relative bg-washi-base dark:bg-sumi-deep border-2 border-vermilion shadow-vermilion-glow">
+<div class="flex items-center justify-between border-b border-vermilion/50 pb-3 mb-4">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 bg-vermilion rotate-45 inline-block"></span>
+<h3 class="font-cinzel text-lg font-bold text-sumi-black dark:text-stone-100 uppercase tracking-wider">
+          Dictamen Forense Bushidō (SEACE)
+        </h3>
+</div>
+<button class="text-stone-400 hover:text-vermilion font-mono text-base font-bold" onclick="closeModal()">✕</button>
+</div>
+<div class="space-y-3 font-mono text-xs text-sumi-black dark:text-stone-300">
+<div class="p-3 bg-vermilion/10 border border-vermilion/30 text-vermilion font-semibold leading-relaxed" id="modalContent">
+        Cargando expediente forense...
+      </div>
+<div class="flex justify-between text-[11px] text-stone-500 pt-2 border-t border-washi-border dark:border-sumi-border">
+<span class="">CANON BUSHIDŌ: JUSTICIA (義) &amp; RECTITUD (正)</span>
+<span class="text-vermilion font-bold">HASH VALIDADO SHA-256</span>
+</div>
+</div>
+<div class="mt-5 flex justify-end gap-2">
+<button class="px-3 py-1.5 border border-washi-border dark:border-sumi-border font-cinzel text-xs uppercase hover:bg-stone-200 dark:hover:bg-stone-800" onclick="closeModal()">
+        CERRAR
+      </button>
+<button class="px-4 py-1.5 bg-vermilion hover:bg-vermilion-dark text-white font-cinzel text-xs font-bold uppercase transition" onclick="alert('Expediente y Hash SHA-256 sellados en el archivo local de auditoría.'); closeModal();">
+        SELLAR EVIDENCIA (HANKO)
+      </button>
+</div>
+</div>
+</div>
+<!-- END: Forensic Audit Modal -->
+<!-- BEGIN: MainFooter -->
+<footer class="relative z-10 border-t border-washi-border dark:border-sumi-border bg-washi-base/95 dark:bg-sumi-ink/95 py-8 mt-12 transition-colors">
+<div class="max-w-[1640px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-mono text-washi-muted dark:text-stone-400"><div class="flex items-center gap-3"><div class="w-7 h-7 octagon-frame bg-vermilion flex items-center justify-center text-white text-xs font-bold">武</div><div><span class="font-cinzel font-black text-sumi-black dark:text-stone-100">OECE / RONIN COCKPIT FORENSE</span><span class="mx-2 font-bold text-sumi-black">|</span><span class="font-bold text-sumi-black dark:text-stone-200">SISTEMA DE FISCALIZACIÓN Y CONTROL CONCURRENTE SEACE 2024</span></div></div><div class="flex flex-wrap items-center gap-5"><span class="text-sumi-black dark:text-stone-300 font-bold">CANON BUSHIDŌ: JUSTICIA (義) • VALOR (勇) • RECTITUD (正) • INTEGRIDAD (誠)</span><span class="text-vermilion font-black font-mono">v4.2.0-FORENSIC-STABLE</span></div></div>
+</footer>
+<!-- END: MainFooter -->
+<!-- BEGIN: Interactive Data & Scripts -->
+<script data-purpose="top-contractors-data-toggle">
+  // Dataset for Top 10 Contractors with REAL TOGGLE (By Monto S/ vs By Qty of Contracts)
+  const contractorsDataByMonto = [
+    { name: "CONSORCIO VIAL DEL SUR", ruc: "20601849182", type: "CONSORCIO", monto: "S/ 482.4 MM", score: 89.5, pct: "95%", detail: "17 de 19 licitaciones | Entidad: MTC Provías", tag: "POSTOR ÚNICO (15/17)" },
+    { name: "CONSTRUCTORA IMPERIAL ANDINA S.A.C.", ruc: "20492817291", type: "INDIVIDUAL", monto: "S/ 319.8 MM", score: 76.2, pct: "75%", detail: "16 licitaciones en GORE Cusco / Descalificaciones masivas", tag: "BAJO SOSPECHA" },
+    { name: "SERVICIOS INTEGRALES BIOMÉDICOS S.A.", ruc: "20551029482", type: "INDIVIDUAL", monto: "S/ 245.1 MM", score: 92.0, pct: "62%", detail: "46 adjudicaciones directas en MINSA / EsSalud", tag: "CATÁLOGO EXCLUSIVO" },
+    { name: "CONSORCIO ENERGÉTICO DEL CENTRO", ruc: "20603348191", type: "CONSORCIO", monto: "S/ 218.5 MM", score: 84.1, pct: "55%", detail: "11 licitaciones Electrocentro / Sin concurrencia", tag: "POSTOR ÚNICO (9/11)" },
+    { name: "CORPORACIÓN DE INGENIERÍA NORTE S.A.", ruc: "20104829103", type: "INDIVIDUAL", monto: "S/ 189.2 MM", score: 71.5, pct: "48%", detail: "14 obras de saneamiento en GORE Piura y La Libertad", tag: "RECURRENCIA ALTA" }
+  ];
+
+  const contractorsDataByQty = [
+    { name: "DISTRIBUIDORA FARMA PERÚ S.A.C.", ruc: "20519384729", type: "INDIVIDUAL", monto: "S/ 154.2 MM", score: 96.5, pct: "98%", detail: "84 contratos formalizados en MINSA y Hospitales Nacionales", tag: "84 ADJUDICACIONES" },
+    { name: "SERVICIOS INTEGRALES BIOMÉDICOS S.A.", ruc: "20551029482", type: "INDIVIDUAL", monto: "S/ 245.1 MM", score: 92.0, pct: "78%", detail: "46 contratos por catálogo electrónico de acuerdos marco", tag: "46 ADJUDICACIONES" },
+    { name: "SEGURIDAD & VIGILANCIA INTEGRAL S.R.L.", ruc: "20481029381", type: "INDIVIDUAL", monto: "S/ 98.7 MM", score: 88.0, pct: "65%", detail: "38 contratos en 22 municipalidades distritales de Lima", tag: "38 ADJUDICACIONES" },
+    { name: "CONSORCIO VIAL DEL SUR", ruc: "20601849182", type: "CONSORCIO", monto: "S/ 482.4 MM", score: 89.5, pct: "40%", detail: "17 megacontratos de infraestructura vial", tag: "17 ADJUDICACIONES" },
+    { name: "CONSTRUCTORA IMPERIAL ANDINA S.A.C.", ruc: "20492817291", type: "INDIVIDUAL", monto: "S/ 319.8 MM", score: 76.2, pct: "36%", detail: "16 contratos en obras viales regionales", tag: "16 ADJUDICACIONES" }
+  ];
+
+  function renderContractors(data) {
+    const container = document.getElementById('contractorsList');
+    if (!container) return;
+
+    container.innerHTML = data.map((item, idx) => `
+      <div class="p-3 bg-white/70 dark:bg-sumi-surface/50 border border-washi-border dark:border-sumi-border transition hover:border-vermilion">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-1.5 mb-1.5">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="font-bold text-sumi-black dark:text-stone-200">0${idx+1}. ${item.name}</span>
+            <span class="text-[10px] text-stone-400">(RUC: ${item.ruc})</span>
+            <span class="px-1.5 py-0.2 text-[9px] ${item.type === 'CONSORCIO' ? 'bg-vermilion text-white font-bold' : 'bg-stone-200 dark:bg-stone-700 text-sumi-black dark:text-stone-200'}">
+              ${item.type}
+            </span>
+          </div>
+          <div class="font-mono text-vermilion font-bold whitespace-nowrap">
+            ${item.monto} (${item.score}% Éxito)
+          </div>
+        </div>
+        <div class="w-full bg-stone-200 dark:bg-stone-800 h-2">
+          <div class="bg-vermilion h-2 transition-all duration-500" style="width: ${item.pct}"></div>
+        </div>
+        <div class="flex justify-between items-center text-[10px] font-serif text-washi-muted dark:text-stone-400 mt-1">
+          <span>${item.detail}</span>
+          <span class="font-mono text-vermilion font-bold">${item.tag}</span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function switchContractorView(mode) {
+    const btnMonto = document.getElementById('toggleBtnMonto');
+    const btnQty = document.getElementById('toggleBtnQty');
+
+    if (mode === 'monto') {
+      btnMonto.className = "px-2.5 py-1 font-bold bg-vermilion text-white shadow-sm transition";
+      btnQty.className = "px-2.5 py-1 text-sumi-black dark:text-stone-300 hover:text-vermilion transition";
+      renderContractors(contractorsDataByMonto);
+    } else {
+      btnQty.className = "px-2.5 py-1 font-bold bg-vermilion text-white shadow-sm transition";
+      btnMonto.className = "px-2.5 py-1 text-sumi-black dark:text-stone-300 hover:text-vermilion transition";
+      renderContractors(contractorsDataByQty);
+    }
+  }
+
+  // Initial render
+  document.addEventListener("DOMContentLoaded", () => {
+    renderContractors(contractorsDataByMonto);
+  });
+</script>
+<script data-purpose="interactive-kpis-and-filters">
+  let activeKpi = null;
+
+  function toggleKpiCard(kpiNum, title) {
+    const cards = document.querySelectorAll('.kpi-card-selectable');
+    const badge = document.getElementById('activeFilterBadge');
+
+    if (activeKpi === kpiNum) {
+      // Toggle off
+      activeKpi = null;
+      cards.forEach(c => c.classList.remove('is-active'));
+      badge.textContent = "FILTRO ACTIVO: NINGUNO (VISTA GLOBAL)";
+      badge.classList.remove('border-gold-crest', 'text-gold-crest');
+      badge.classList.add('border-vermilion/30', 'text-vermilion');
+    } else {
+      // Toggle on
+      activeKpi = kpiNum;
+      cards.forEach(c => c.classList.remove('is-active'));
+      const activeEl = document.getElementById(`kpi-${kpiNum}`);
+      if (activeEl) activeEl.classList.add('is-active');
+      badge.textContent = `FILTRO ACTIVO: KPI-0${kpiNum} - ${title.toUpperCase()}`;
+      badge.classList.remove('border-vermilion/30', 'text-vermilion');
+      badge.classList.add('border-gold-crest', 'text-amber-700', 'dark:text-gold-crest');
+    }
+  }
+
+  function applyFilters() {
+    const yr = document.getElementById('filterYear').value;
+    const mo = document.getElementById('filterMonth').value;
+    const reg = document.getElementById('filterRegion').value;
+    const obj = document.getElementById('filterObject').value;
+    const typ = document.getElementById('filterType').value;
+
+    const badge = document.getElementById('activeFilterBadge');
+    badge.textContent = `FILTRO CONCURRENTE: [${yr} / ${mo.toUpperCase()} / REG: ${reg.toUpperCase()} / OBJ: ${obj.toUpperCase()} / TIPO: ${typ}]`;
+  }
+
+  function triggerKatanaSearch() {
+    const q = document.getElementById('katanaInput').value.trim();
+    if (!q) {
+      alert("Por favor ingrese un RUC, Entidad o Número de Proceso para asestar el corte forense.");
+      return;
+    }
+    const tableSearch = document.getElementById('tableSearchInput');
+    if (tableSearch) {
+      tableSearch.value = q;
+      searchTable();
+    }
+    const el = document.getElementById('forensicTable');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function searchTable() {
+    const input = document.getElementById('tableSearchInput');
+    const filter = input.value.toLowerCase();
+    const table = document.getElementById('forensicTable');
+    const tr = table.getElementsByTagName('tr');
+
+    for (let i = 1; i < tr.length; i++) {
+      const tdText = tr[i].textContent || tr[i].innerText;
+      if (tdText.toLowerCase().indexOf(filter) > -1) {
+        tr[i].style.display = "";
+      } else {
+        tr[i].style.display = "none";
+      }
+    }
+  }
+
+  function setActiveTab(btn, tabId) {
+    const navBtns = document.querySelectorAll('.tab-btn');
+    navBtns.forEach(b => {
+      b.classList.remove('active', 'bg-vermilion', 'text-white', 'shadow-sm');
+      b.classList.add('text-sumi-black', 'dark:text-stone-300');
+    });
+    btn.classList.add('active', 'bg-vermilion', 'text-white', 'shadow-sm');
+    btn.classList.remove('text-sumi-black', 'dark:text-stone-300');
+    
+    if (tabId === 'fase1') {
+      toggleKpiCard(6, 'Tasa de Postor Único');
+    }
+  }
+
+  function openModal(text) {
+    document.getElementById('modalContent').textContent = text;
+    document.getElementById('forensicModal').classList.remove('hidden');
+  }
+
+  function closeModal() {
+    document.getElementById('forensicModal').classList.add('hidden');
+  }
+</script>
+<script data-purpose="interactive-dot-matrix">
+  // Interactive Dot Matrix Canvas with living sumi-e ink ripple halo
+  const canvas = document.getElementById('dotCanvas');
+  const ctx = canvas.getContext('2d');
+
+  let width = (canvas.width = window.innerWidth);
+  let height = (canvas.height = window.innerHeight);
+
+  window.addEventListener('resize', () => {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+    initDots();
+  });
+
+  const mouse = { x: -1000, y: -1000, radius: 130 };
+
+  window.addEventListener('mousemove', (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+  });
+
+  window.addEventListener('mouseout', () => {
+    mouse.x = -1000;
+    mouse.y = -1000;
+  });
+
+  const spacing = 30;
+  let dots = [];
+
+  function initDots() {
+    dots = [];
+    for (let x = 0; x < width; x += spacing) {
+      for (let y = 0; y < height; y += spacing) {
+        dots.push({
+          baseX: x,
+          baseY: y,
+          x: x,
+          y: y,
+          size: 1.15,
+          color: '#B5A994'
+        });
+      }
+    }
+  }
+
+  initDots();
+
+  function render() {
+    ctx.clearRect(0, 0, width, height);
+
+    const isDark = document.documentElement.classList.contains('dark');
+    const baseColor = isDark ? 'rgba(70, 58, 76, 0.45)' : 'rgba(190, 175, 155, 0.55)';
+    const activeColor = '#9E1B1E';
+    const goldColor = '#C5A059';
+
+    for (let i = 0; i < dots.length; i++) {
+      const dot = dots[i];
+      const dx = mouse.x - dot.x;
+      const dy = mouse.y - dot.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      let curSize = dot.size;
+      let curColor = baseColor;
+
+      if (dist < mouse.radius) {
+        const factor = 1 - dist / mouse.radius;
+        curSize = dot.size + factor * 2.6;
+        curColor = factor > 0.5 ? activeColor : goldColor;
+
+        // Miniature ink diamond on proximity
+        ctx.fillStyle = curColor;
+        ctx.beginPath();
+        ctx.moveTo(dot.x, dot.y - curSize * 1.3);
+        ctx.lineTo(dot.x + curSize * 1.3, dot.y);
+        ctx.lineTo(dot.x, dot.y + curSize * 1.3);
+        ctx.lineTo(dot.x - curSize * 1.3, dot.y);
+        ctx.fill();
+      } else {
+        ctx.fillStyle = curColor;
+        ctx.beginPath();
+        ctx.arc(dot.x, dot.y, curSize, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    requestAnimationFrame(render);
+  }
+
+  requestAnimationFrame(render);
+</script>
+<script data-purpose="theme-toggle">
+  // Sumi-e (Dark) vs Washi (Light) theme toggler
+  const themeBtn = document.getElementById('themeToggle');
+  const themeLabel = document.getElementById('themeLabel');
+
+  themeBtn.addEventListener('click', () => {
+    const htmlEl = document.documentElement;
+    if (htmlEl.classList.contains('dark')) {
+      htmlEl.classList.remove('dark');
+      themeLabel.textContent = '墨 SUMI-E';
+    } else {
+      htmlEl.classList.add('dark');
+      themeLabel.textContent = '紙 WASHI';
+    }
+  });
+</script>
+<!-- END: Interactive Data & Scripts -->
+
+
+</body></html>

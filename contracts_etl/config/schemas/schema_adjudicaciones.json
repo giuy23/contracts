@@ -1,0 +1,38 @@
+{
+  "table_name": "adjudicaciones",
+  "primary_key": ["codigo_convocatoria", "numero_item", "ruc_proveedor"],
+  "foreign_keys": [
+    {
+      "columns": ["codigo_convocatoria", "numero_item"],
+      "reference_table": "datos_convocatoria",
+      "reference_columns": ["codigo_convocatoria", "numero_item"]
+    }
+  ],
+  "columns": [
+    {"excel_column": "codigoentidad", "sql_column": "codigo_entidad", "sql_type": "VARCHAR(20)", "python_type": "str", "nullable": true},
+    {"excel_column": "entidad_ruc", "sql_column": "ruc_entidad", "sql_type": "VARCHAR(11)", "python_type": "str", "nullable": false},
+    {"excel_column": "entidad", "sql_column": "nombre_entidad", "sql_type": "VARCHAR(255)", "python_type": "str", "nullable": true},
+    {"excel_column": "tipoentidad", "sql_column": "tipo_entidad", "sql_type": "VARCHAR(100)", "python_type": "str", "nullable": true},
+    {"excel_column": "entidad_departamento", "sql_column": "entidad_departamento", "sql_type": "VARCHAR(100)", "python_type": "str", "nullable": true},
+    {"excel_column": "codigoconvocatoria", "sql_column": "codigo_convocatoria", "sql_type": "VARCHAR(20)", "python_type": "str", "nullable": false},
+    {"excel_column": "objetocontractual", "sql_column": "objeto_contractual", "sql_type": "VARCHAR(50)", "python_type": "str", "nullable": true},
+    {"excel_column": "tipoprocesoseleccion", "sql_column": "tipo_proceso_seleccion", "sql_type": "VARCHAR(100)", "python_type": "str", "nullable": true},
+    {"excel_column": "proceso", "sql_column": "nomenclatura_proceso", "sql_type": "VARCHAR(100)", "python_type": "str", "nullable": true},
+    {"excel_column": "descripcion_proceso", "sql_column": "descripcion_proceso", "sql_type": "TEXT", "python_type": "str", "nullable": true},
+    {"excel_column": "n_item", "sql_column": "numero_item", "sql_type": "INT", "python_type": "int", "nullable": false},
+    {"excel_column": "descripcion_item", "sql_column": "descripcion_item", "sql_type": "TEXT", "python_type": "str", "nullable": true},
+    {"excel_column": "estado_item", "sql_column": "estado_item", "sql_type": "VARCHAR(50)", "python_type": "str", "nullable": true},
+    {"excel_column": "cantidad_adjudicado_item", "sql_column": "cantidad_adjudicado_item", "sql_type": "DECIMAL(12,2)", "python_type": "float", "nullable": true},
+    {"excel_column": "monto_referencial_item_soles", "sql_column": "monto_referencial_item_soles", "sql_type": "DECIMAL(16,2)", "python_type": "float", "nullable": true},
+    {"excel_column": "monto_adjudicado_item_soles", "sql_column": "monto_adjudicado_item_soles", "sql_type": "DECIMAL(16,2)", "python_type": "float", "nullable": true},
+    {"excel_column": "departamento_item", "sql_column": "departamento_item", "sql_type": "VARCHAR(100)", "python_type": "str", "nullable": true},
+    {"excel_column": "moneda", "sql_column": "moneda", "sql_type": "VARCHAR(10)", "python_type": "str", "nullable": true},
+    {"excel_column": "unidad_medida", "sql_column": "unidad_medida", "sql_type": "VARCHAR(50)", "python_type": "str", "nullable": true},
+    {"excel_column": "ruc_proveedor", "sql_column": "ruc_proveedor", "sql_type": "VARCHAR(20)", "python_type": "str", "nullable": false},
+    {"excel_column": "proveedor", "sql_column": "nombre_proveedor", "sql_type": "VARCHAR(255)", "python_type": "str", "nullable": true},
+    {"excel_column": "tipo_proveedor", "sql_column": "tipo_proveedor", "sql_type": "VARCHAR(50)", "python_type": "str", "nullable": true},
+    {"excel_column": "fecha_convocatoria", "sql_column": "fecha_convocatoria", "sql_type": "DATE", "python_type": "date", "nullable": true},
+    {"excel_column": "fecha_buenapro", "sql_column": "fecha_buena_pro", "sql_type": "DATE", "python_type": "date", "nullable": true},
+    {"excel_column": "fecha_consentimiento_bp", "sql_column": "fecha_consentimiento_bp", "sql_type": "DATE", "python_type": "date", "nullable": true}
+  ]
+}

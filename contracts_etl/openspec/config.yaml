@@ -1,0 +1,8 @@
+schema: spec-driven
+
+context: |
+  Tech stack: Python 3.12, Pandas, OpenPyXL, SQLAlchemy, PyMySQL, MySQL 8 (WSL / 127.0.0.1:3306), Pytest
+  Domain: Contrataciones del Estado Peruano (SEACE / OECE) - Fase 1
+  Database: contrataciones
+  Key Entities: convocatorias, ofertantes, adjudicaciones, contratos
+  Architecture: Modular ETL pipeline with JSON declarative schemas and progress tracking in etl_progress.json

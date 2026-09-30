@@ -1,0 +1,55 @@
+{
+  "table_name": "ofertantes",
+  "primary_key": ["codigo_convocatoria", "numero_item", "ruc_postor"],
+  "foreign_keys": [
+    {
+      "columns": ["codigo_convocatoria", "numero_item"],
+      "reference_table": "datos_convocatoria",
+      "reference_columns": ["codigo_convocatoria", "numero_item"]
+    }
+  ],
+  "columns": [
+    {
+      "excel_column": "codigo_convocatoria",
+      "sql_column": "codigo_convocatoria",
+      "sql_type": "VARCHAR(20)",
+      "python_type": "str",
+      "nullable": false
+    },
+    {
+      "excel_column": "fechaconvocatoria",
+      "sql_column": "fecha_convocatoria",
+      "sql_type": "DATE",
+      "python_type": "date",
+      "nullable": true
+    },
+    {
+      "excel_column": "n_item",
+      "sql_column": "numero_item",
+      "sql_type": "INT",
+      "python_type": "int",
+      "nullable": false
+    },
+    {
+      "excel_column": "ruc_codigo_postor",
+      "sql_column": "ruc_postor",
+      "sql_type": "VARCHAR(20)",
+      "python_type": "str",
+      "nullable": false
+    },
+    {
+      "excel_column": "postor",
+      "sql_column": "nombre_postor",
+      "sql_type": "VARCHAR(255)",
+      "python_type": "str",
+      "nullable": true
+    },
+    {
+      "excel_column": "fecha_presentacion_propuesta",
+      "sql_column": "fecha_presentacion_propuesta",
+      "sql_type": "DATETIME",
+      "python_type": "datetime",
+      "nullable": true
+    }
+  ]
+}

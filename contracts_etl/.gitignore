@@ -1,0 +1,25 @@
+# Entornos virtuales
+.venv/
+venv/
+ENV/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Datos pesados y logs
+data/raw/*/*.xlsx
+data/raw/*/*.xls
+!data/raw/**/.gitkeep
+data/rejected/*.csv
+!data/rejected/.gitkeep
+logs/*.log
+logs/*.json
+!logs/.gitkeep
+
+# Variables de entorno locales
+.env
+.gemini
+.agents

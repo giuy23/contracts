@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html class="scroll-smooth" lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Perfil y Auditoría Forense de Contratista - OECE / RONIN.SEACE</title>
+  
+  <!-- Google Fonts: Cinzel, Cormorant Garamond, Space Grotesk & JetBrains Mono -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&amp;family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  
+  <!-- CSS Compilado con Tailwind y soporte CDN -->
+  <link rel="stylesheet" href="/css/output.css">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            vermilion: {
+              DEFAULT: '#9E1B1E',
+              dark: '#7A1215',
+              light: '#BF262A',
+              crimson: '#C81D25',
+              glow: '#FF2E38'
+            },
+            washi: {
+              base: '#FAF7F2',
+              surface: '#F3EFE7',
+              border: '#E3D7C5',
+              muted: '#7F786B'
+            },
+            sumi: {
+              black: '#111116',
+              deep: '#1A181C',
+              surface: '#242127',
+              border: '#3D3642',
+              ink: '#0B0A0D'
+            },
+            gold: {
+              crest: '#C5A059',
+              light: '#DFBD76',
+              antique: '#9C7A3C'
+            }
+          },
+          fontFamily: {
+            cinzel: ['"Cinzel"', 'serif'],
+            serif: ['"Cormorant Garamond"', 'serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+            sans: ['"Space Grotesk"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .washi-pattern {
+      background-color: #FAF7F2;
+      background-image: radial-gradient(#D8CEBC 0.8px, transparent 0.8px), radial-gradient(#D8CEBC 0.8px, #FAF7F2 0.8px);
+      background-size: 28px 28px;
+      background-position: 0 0, 14px 14px;
+    }
+    .dark .washi-pattern {
+      background-color: #0E0D10;
+      background-image: radial-gradient(#2A2530 0.8px, transparent 0.8px), radial-gradient(#2A2530 0.8px, #0E0D10 0.8px);
+      background-size: 28px 28px;
+      background-position: 0 0, 14px 14px;
+    }
+    .comic-panel {
+      position: relative;
+      border: 1px solid #D6C7B2;
+      background: rgba(254, 252, 248, 0.94);
+      backdrop-filter: blur(8px);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .dark .comic-panel {
+      border: 1px solid #362E3B;
+      background: rgba(22, 19, 25, 0.94);
+    }
+    .comic-panel:hover {
+      border-color: #9E1B1E;
+      box-shadow: 0 10px 30px -10px rgba(158, 27, 30, 0.18);
+    }
+    .corner-bracket::before, .corner-bracket::after {
+      content: "✦";
+      position: absolute;
+      font-size: 9px;
+      line-height: 1;
+      color: #9E1B1E;
+      pointer-events: none;
+    }
+    .corner-bracket::before { top: -6px; left: -5px; }
+    .corner-bracket::after { bottom: -6px; right: -5px; }
+    .octagon-frame {
+      clip-path: polygon(14% 0%, 86% 0%, 100% 14%, 100% 86%, 86% 100%, 14% 100%, 0% 86%, 0% 14%);
+    }
+    .hanko-seal {
+      border: 2px solid #9E1B1E;
+      color: #9E1B1E;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cinzel', serif;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+    }
+    #dotCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.65;
+    }
+  </style>
+</head>
+<body class="washi-pattern text-sumi-black dark:text-stone-200 antialiased min-h-screen selection:bg-vermilion selection:text-white transition-colors duration-300 relative font-sans">
+  <canvas id="dotCanvas"></canvas>
+
+  <!-- BEGIN: MainHeader -->
+  <header class="relative z-20 border-b border-washi-border dark:border-sumi-border bg-washi-base/95 dark:bg-sumi-black/95 backdrop-blur-md sticky top-0 transition-colors shadow-sm">
+    <div class="max-w-[1640px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Brand & Mon Crest -->
+      <div class="flex items-center gap-3">
+        <a href="/index.html" class="w-10 h-10 octagon-frame bg-vermilion flex items-center justify-center text-white shadow-sm ring-2 ring-vermilion-light/50 flex-shrink-0 hover:scale-105 transition" title="Ir al Cockpit General">
+          <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+            <path d="M12 2L14.8 9H9.2L12 2ZM3 10H21V12H19V20H17V12H13V22H11V12H7V20H5V12H3V10ZM12 5.5L10.8 8.5H13.2L12 5.5Z"></path>
+          </svg>
+        </a>
+        <div>
+          <div class="flex items-center gap-2">
+            <a href="/index.html" class="font-cinzel text-lg font-black tracking-widest text-sumi-black dark:text-stone-100 uppercase hover:text-vermilion transition">
+              OECE / RONIN<span class="text-vermilion">.SEACE</span>
+            </a>
+          </div>
+          <p class="text-[10px] font-serif tracking-wider text-sumi-black dark:text-stone-400 italic font-medium">Auditoría Individual Forense de Contratista del Estado</p>
+        </div>
+      </div>
+
+      <!-- SIDEBAR HORIZONTAL: Suite de Pantallas Integrada -->
+      <nav class="hidden lg:flex items-center gap-1.5 p-1 bg-washi-surface/90 dark:bg-sumi-deep border border-vermilion/40 shadow-sm relative corner-bracket">
+        <div class="flex items-center gap-1 px-2 py-1 bg-sumi-black text-white text-[9px] font-mono tracking-wider font-bold uppercase mr-1 border-r border-vermilion/50">
+          <span class="text-vermilion font-bold text-xs">道</span>
+          <span>SUITE FORENSE:</span>
+        </div>
+        
+        <a href="/index.html" class="nav-tab-btn px-3 py-1.5 text-xs font-cinzel font-semibold tracking-wider uppercase text-sumi-black dark:text-stone-300 hover:text-vermilion hover:bg-stone-200/50 dark:hover:bg-sumi-surface border border-transparent hover:border-washi-border transition flex items-center gap-1">
+          <span>01. VISIÓN GENERAL</span>
+        </a>
+
+        <a href="/contratista.html" class="nav-tab-btn active px-3 py-1.5 text-xs font-cinzel font-bold tracking-wider uppercase bg-vermilion text-white shadow-sm border border-vermilion-light flex items-center gap-1.5">
+          <span class="text-[9px] text-gold-crest">✦</span>
+          <span>02. PERFIL CONTRATISTA</span>
+        </a>
+
+        <button class="nav-tab-btn opacity-60 cursor-not-allowed px-3 py-1.5 text-xs font-cinzel font-semibold tracking-wider uppercase text-stone-400 border border-transparent flex items-center gap-1" title="Próxima fase">
+          <span>03. EXPLORADOR POR ÍTEM</span>
+        </button>
+
+        <button class="nav-tab-btn opacity-60 cursor-not-allowed px-3 py-1.5 text-xs font-cinzel font-semibold tracking-wider uppercase text-stone-400 border border-transparent flex items-center gap-1" title="Próxima fase">
+          <span>04. SHA-256 AUDITORÍA</span>
+        </button>
+      </nav>
+
+      <!-- Right Controls: Volver & Theme Toggle -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <a href="/index.html" class="px-3 py-1.5 border border-vermilion bg-vermilion/10 text-vermilion hover:bg-vermilion hover:text-white font-cinzel text-xs font-bold tracking-wider transition flex items-center gap-1.5 shadow-sm">
+          <span>←</span>
+          <span>VOLVER A VISIÓN GENERAL</span>
+        </a>
+
+        <button class="p-1.5 border border-washi-border dark:border-sumi-border bg-white/80 dark:bg-sumi-deep text-sumi-black dark:text-stone-300 hover:border-vermilion text-xs font-mono transition" id="themeToggle" title="Alternar Washi / Sumi">
+          <span id="themeLabel">墨 SUMI-E</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+  <!-- END: MainHeader -->
+
+  <!-- BEGIN: MainContent -->
+  <main class="relative z-10 max-w-[1640px] mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-6">
+
+    <!-- BARRA SUPERIOR DE BÚSQUEDA FORENSE Y SELECTOR DE EJERCICIO -->
+    <section class="comic-panel corner-bracket p-4">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        
+        <!-- Buscador Predictivo por RUC o Razón Social -->
+        <div class="relative flex-1 max-w-2xl">
+          <label class="block text-[10px] font-mono uppercase text-stone-500 dark:text-stone-400 mb-1 font-semibold tracking-wider">
+            Buscador Forense de Contratista (RUC 11 Dígitos o Razón Social)
+          </label>
+          <div class="relative flex items-center">
+            <span class="absolute left-3 text-stone-400 font-mono text-sm pointer-events-none">🔍</span>
+            <input 
+              id="searchContratistaInput" 
+              type="text" 
+              autocomplete="off"
+              placeholder="Digite RUC o nombre de la empresa (ej. 20100041953, RIMAC, GRAÑA...)" 
+              class="w-full pl-9 pr-24 py-2 text-xs font-mono bg-white dark:bg-sumi-deep border border-washi-border dark:border-sumi-border focus:border-vermilion focus:ring-1 focus:ring-vermilion text-sumi-black dark:text-stone-200 outline-none transition"
+            >
+            <div id="searchSpinner" class="hidden absolute right-16">
+              <span class="inline-block animate-spin text-vermilion text-xs">☯</span>
+            </div>
+            <button 
+              id="btnSearchContratista" 
+              class="absolute right-1 px-3 py-1.5 bg-vermilion hover:bg-vermilion-dark text-white font-cinzel font-bold text-[10px] tracking-wider transition">
+              BUSCAR
+            </button>
+          </div>
+
+          <!-- Dropdown Autocompletado Predictivo -->
+          <div 
+            id="searchDropdown" 
+            class="hidden absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-sumi-deep border border-vermilion/50 shadow-xl max-h-72 overflow-y-auto divide-y divide-washi-border dark:divide-sumi-border">
+          </div>
+        </div>
+
+        <!-- Selector de Periodo Fiscal / Año -->
+        <div class="flex flex-wrap items-center gap-3">
+          <div>
+            <label class="block text-[10px] font-mono uppercase text-stone-500 dark:text-stone-400 mb-1 font-semibold tracking-wider">
+              Ejercicio Fiscal
+            </label>
+            <select 
+              id="selectYearFilter" 
+              class="px-3 py-2 text-xs font-mono bg-white dark:bg-sumi-deep border border-washi-border dark:border-sumi-border focus:border-vermilion text-sumi-black dark:text-stone-200 outline-none">
+              <option value="2026" selected>2026</option>
+              <option value="2025">2025</option>
+              <option value="2024">2024</option>
+              <option value="2023">2023</option>
+              <option value="2022">2022</option>
+              <option value="all">Todos los años (2022 - 2026)</option>
+            </select>
+          </div>
+
+          <!-- Botón de Exportación a Excel Forense -->
+          <div class="self-end">
+            <button 
+              id="btnExportExcel" 
+              class="px-4 py-2 bg-emerald-800 hover:bg-emerald-700 active:bg-emerald-900 text-white font-cinzel font-bold text-xs tracking-wider border border-emerald-600 shadow-sm transition flex items-center gap-2">
+              <span class="text-sm">📥</span>
+              <span>EXPORTAR AUDITORÍA A EXCEL (.XLSX)</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- CONTENEDOR MAESTRO DE 2 COLUMNAS (SIDEBAR VERTICAL FIJO + ÁREA ANALÍTICA BENTO) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- COLUMNA 1: SIDEBAR VERTICAL FIJO (STICKY DOSSIER DE KPIS E IDENTIDAD) -->
+      <aside class="lg:col-span-3 xl:col-span-3 space-y-4 lg:sticky lg:top-20">
+        
+        <!-- Ficha de Identidad de la Empresa -->
+        <section class="comic-panel corner-bracket p-4 border-l-4 border-l-vermilion">
+          <div class="flex items-center justify-between mb-2">
+            <span class="hanko-seal text-[8px] px-1.5 py-0.5">DOSSIER FORENSE</span>
+            <div class="flex items-center gap-1.5 text-[9px] font-mono text-vermilion font-bold">
+              <span class="w-1.5 h-1.5 rounded-full bg-vermilion animate-pulse"></span>
+              <span>AUDITORÍA ACTIVA</span>
+            </div>
+          </div>
+          
+          <h1 id="lblRazonSocial" class="text-base font-cinzel font-black tracking-wide text-sumi-black dark:text-stone-100 uppercase line-clamp-2">
+            Cargando empresa...
+          </h1>
+
+          <div class="mt-2.5 space-y-1.5 font-mono text-[11px] text-stone-500 dark:text-stone-400 border-t border-washi-border/60 dark:border-sumi-border/60 pt-2">
+            <div class="flex justify-between items-center">
+              <span>RUC:</span>
+              <strong id="lblRuc" class="text-vermilion font-bold text-xs">--</strong>
+            </div>
+            <div class="flex justify-between items-center">
+              <span>Tipo:</span>
+              <span id="badgeTipoProveedor" class="px-1.5 py-0.2 text-[9px] font-bold bg-stone-200 dark:bg-stone-700 text-stone-800 dark:text-stone-200">
+                INDIVIDUAL
+              </span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span>Sede Central:</span>
+              <span id="lblSede" class="font-semibold text-sumi-black dark:text-stone-300">--</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span>Periodo:</span>
+              <span id="lblPeriodoAuditoria" class="font-semibold text-sumi-black dark:text-stone-300 text-[10px]">--</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5 Tarjetas KPI Verticales Fijas -->
+        <div class="space-y-3">
+          
+          <!-- KPI 1: Total Contratos -->
+          <article class="comic-panel p-3.5 border-l-4 border-l-vermilion">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[9px] font-mono tracking-wider uppercase text-stone-500 dark:text-stone-400">01. CONTRATOS SUSCRITOS</span>
+              <span class="text-xs">📜</span>
+            </div>
+            <div class="font-cinzel text-2xl font-black text-sumi-black dark:text-stone-100 tracking-tight" id="kpiTotalContratos">
+              --
+            </div>
+            <p class="text-[10px] font-serif text-stone-500 dark:text-stone-400 mt-0.5">
+              Formalizados en el periodo
+            </p>
+          </article>
+
+          <!-- KPI 2: Monto Formalizado (S/) -->
+          <article class="comic-panel p-3.5 border-l-4 border-l-gold-crest">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[9px] font-mono tracking-wider uppercase text-stone-500 dark:text-stone-400">02. MONTO FORMALIZADO</span>
+              <span class="text-xs">💰</span>
+            </div>
+            <div class="font-cinzel text-xl font-black text-vermilion dark:text-vermilion-light tracking-tight truncate" id="kpiMontoTotal">
+              --
+            </div>
+            <p class="text-[10px] font-mono text-stone-500 dark:text-stone-400 mt-0.5 truncate" id="kpiMontoSub">
+              Importe formalizado acumulado
+            </p>
+          </article>
+
+          <!-- KPI 3: Entidades Clientes -->
+          <article class="comic-panel p-3.5 border-l-4 border-l-stone-500">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[9px] font-mono tracking-wider uppercase text-stone-500 dark:text-stone-400">03. ENTIDADES CLIENTES</span>
+              <span class="text-xs">🏛</span>
+            </div>
+            <div class="font-cinzel text-2xl font-black text-sumi-black dark:text-stone-100 tracking-tight" id="kpiEntidades">
+              --
+            </div>
+            <p class="text-[10px] font-serif text-stone-500 dark:text-stone-400 mt-0.5">
+              Compradores públicos distintos
+            </p>
+          </article>
+
+          <!-- KPI 4: Tasa Postor Único (%) -->
+          <article class="comic-panel p-3.5 border-l-4 border-l-stone-400 dark:border-l-stone-600 transition-all" id="cardPostorUnico">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[9px] font-mono tracking-wider uppercase text-stone-500 dark:text-stone-400">04. POSTOR ÚNICO</span>
+              <span class="text-[9px] font-mono px-1.5 py-0.5 font-bold" id="badgePostorAlert">⚖️ CONCURRENCIA</span>
+            </div>
+            <div class="font-cinzel text-2xl font-black text-sumi-black dark:text-stone-100 tracking-tight" id="kpiPostorUnico">
+              --%
+            </div>
+            <div class="w-full bg-stone-200 dark:bg-stone-800 h-1.5 my-1.5">
+              <div id="barPostorUnico" class="bg-vermilion h-1.5 transition-all duration-700" style="width: 0%"></div>
+            </div>
+            <p class="text-[10px] font-serif text-stone-500 dark:text-stone-400 truncate" id="kpiPostorDesc">
+              Nivel estándar de oferentes
+            </p>
+          </article>
+
+          <!-- KPI 5: Win Rate Forense (%) -->
+          <article class="comic-panel p-3.5 border-l-4 border-l-emerald-600">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[9px] font-mono tracking-wider uppercase text-stone-500 dark:text-stone-400">05. WIN RATE FORENSE</span>
+              <span class="text-xs">🎯</span>
+            </div>
+            <div class="font-cinzel text-2xl font-black text-emerald-700 dark:text-emerald-400 tracking-tight" id="kpiWinRate">
+              --%
+            </div>
+            <div class="w-full bg-stone-200 dark:bg-stone-800 h-1.5 my-1.5">
+              <div id="barWinRate" class="bg-emerald-600 h-1.5 transition-all duration-700" style="width: 0%"></div>
+            </div>
+            <p class="text-[10px] font-serif text-stone-500 dark:text-stone-400 truncate" id="kpiWinRateDesc">
+              Efectividad de adjudicación
+            </p>
+          </article>
+
+        </div>
+      </aside>
+
+      <!-- COLUMNA 2 & 3: CONTENIDO DINÁMICO ANALÍTICO (GRID ASIMÉTRICO BENTO) -->
+      <div class="lg:col-span-9 xl:col-span-9 space-y-6">
+
+        <!-- FILA SUPERIOR: DONUT TERRITORIAL + TIMELINE DE EVENTOS (2 Columnas) -->
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+          
+          <!-- Panel 1: Gráfica Circular Forense (Donut Chart SVG) -->
+          <div class="comic-panel corner-bracket p-4">
+            <div class="flex items-center justify-between pb-2 mb-3 border-b border-washi-border dark:border-sumi-border">
+              <div>
+                <span class="text-[9px] font-mono tracking-wider text-stone-400 uppercase">ANÁLISIS TERRITORIAL</span>
+                <h3 class="font-cinzel text-sm font-bold text-sumi-black dark:text-stone-100 uppercase">
+                  Distribución Geográfica (Donut Forense)
+                </h3>
+              </div>
+              <span class="text-[10px] font-mono text-gold-crest font-bold">PORCENTAJES %</span>
+            </div>
+
+            <div id="donutChartContainer" class="min-h-[220px]">
+              <div class="p-8 text-center text-stone-400 font-mono text-xs">Cargando distribución geográfica...</div>
+            </div>
+          </div>
+
+          <!-- Panel 2: Línea de Tiempo de Eventos (2022 - 2026) -->
+          <div class="comic-panel corner-bracket p-4">
+            <div class="flex items-center justify-between pb-2 mb-3 border-b border-washi-border dark:border-sumi-border">
+              <div>
+                <span class="text-[9px] font-mono tracking-wider text-stone-400 uppercase">EVOLUCIÓN MULTIANUAL</span>
+                <h3 class="font-cinzel text-sm font-bold text-sumi-black dark:text-stone-100 uppercase">
+                  Hitos Cronológicos (2022 - 2026)
+                </h3>
+              </div>
+              <span class="text-[10px] font-mono text-vermilion font-bold">HISTÓRICO</span>
+            </div>
+
+            <div id="timelineEventsContainer" class="min-h-[220px]">
+              <div class="p-8 text-center text-stone-400 font-mono text-xs">Cargando eventos anuales...</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- FILA MEDIA: CONCENTRACIÓN DE CLIENTES + RED DE RIVALES (2 Columnas) -->
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+          
+          <!-- Panel 3: Concentración por Entidades Públicas Clientes -->
+          <div class="comic-panel corner-bracket p-4">
+            <div class="flex items-center justify-between pb-2 mb-3 border-b border-washi-border dark:border-sumi-border">
+              <div>
+                <span class="text-[9px] font-mono tracking-wider text-stone-400 uppercase">CAPTURA INSTITUCIONAL</span>
+                <h3 class="font-cinzel text-sm font-bold text-sumi-black dark:text-stone-100 uppercase">
+                  Top Entidades Públicas Clientes
+                </h3>
+              </div>
+              <span class="text-[10px] font-mono text-vermilion font-bold">CARTERA %</span>
+            </div>
+
+            <div id="clientesContainer" class="space-y-2.5 max-h-80 overflow-y-auto pr-1">
+              <div class="p-6 text-center text-stone-400 font-mono text-xs">Cargando entidades compradoras...</div>
+            </div>
+          </div>
+
+          <!-- Panel 4: Red Forense de Rivales Habituales (Face-to-Face Duels) -->
+          <div class="comic-panel corner-bracket p-4">
+            <div class="flex items-center justify-between pb-2 mb-3 border-b border-washi-border dark:border-sumi-border">
+              <div>
+                <span class="text-[9px] font-mono tracking-wider text-stone-400 uppercase">BID RIGGING CHECK</span>
+                <h3 class="font-cinzel text-sm font-bold text-sumi-black dark:text-stone-100 uppercase">
+                  Confrontación con Rivales Habituales
+                </h3>
+              </div>
+              <span class="text-[10px] font-mono text-vermilion font-bold">DUELOS FORENSES</span>
+            </div>
+
+            <div id="competidoresContainer" class="space-y-2 max-h-80 overflow-y-auto pr-1">
+              <div class="p-6 text-center text-stone-400 font-mono text-xs">Cargando red de competidores...</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- FILA INFERIOR: GRILLA DETALLADA DE EXPEDIENTES CONTRACTUALES (A TODO LO ANCHO) -->
+        <div class="w-full">
+          <section class="comic-panel corner-bracket p-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-3 border-b border-washi-border dark:border-sumi-border gap-2">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="hanko-seal text-[8px] px-1 py-0.2">AUDITORÍA</span>
+                  <h3 class="font-cinzel text-base font-bold text-sumi-black dark:text-stone-100 uppercase">
+                    Expedientes Contractuales Formalizados
+                  </h3>
+                </div>
+                <p class="text-[11px] font-serif text-stone-500 dark:text-stone-400 italic">
+                  Haga clic en cualquier fila para desplegar el acordeón con todos los postores competidores del ítem.
+                </p>
+              </div>
+              <div class="flex items-center gap-3">
+                <span id="lblContratosCount" class="text-xs font-mono font-bold text-vermilion">
+                  Mostrando 0 contratos
+                </span>
+              </div>
+            </div>
+
+            <!-- Tabla Responsive -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs font-mono">
+                <thead>
+                  <tr class="bg-washi-surface dark:bg-sumi-deep border-b border-washi-border dark:border-sumi-border text-[10px] text-stone-600 dark:text-stone-400 uppercase tracking-wider">
+                    <th class="py-2.5 px-2 w-8 text-center">+/-</th>
+                    <th class="py-2.5 px-3">Cód. Contrato / N°</th>
+                    <th class="py-2.5 px-3">Entidad Pública Convocante</th>
+                    <th class="py-2.5 px-3">Objeto / Modalidad</th>
+                    <th class="py-2.5 px-3">Ubicación</th>
+                    <th class="py-2.5 px-3 text-center">Fecha Suscripción</th>
+                    <th class="py-2.5 px-3 text-right">Monto Formalizado (S/)</th>
+                    <th class="py-2.5 px-3 text-center">Postores</th>
+                    <th class="py-2.5 px-2 text-center">SEACE</th>
+                  </tr>
+                </thead>
+                <tbody id="contratosTableBody" class="divide-y divide-washi-border dark:divide-sumi-border">
+                  <tr>
+                    <td colspan="9" class="p-8 text-center text-stone-400 font-mono">
+                      Cargando expedientes contractuales...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Controles de Paginación -->
+            <div class="flex items-center justify-between pt-4 mt-3 border-t border-washi-border dark:border-sumi-border text-xs font-mono">
+              <div class="text-stone-500 dark:text-stone-400" id="paginationInfo">
+                Página 1
+              </div>
+              <div class="flex items-center gap-2">
+                <button 
+                  id="btnPrevPage" 
+                  disabled
+                  class="px-3 py-1 border border-washi-border dark:border-sumi-border bg-white dark:bg-sumi-deep disabled:opacity-40 disabled:cursor-not-allowed hover:border-vermilion transition">
+                  ← Anterior
+                </button>
+                <button 
+                  id="btnNextPage" 
+                  disabled
+                  class="px-3 py-1 border border-washi-border dark:border-sumi-border bg-white dark:bg-sumi-deep disabled:opacity-40 disabled:cursor-not-allowed hover:border-vermilion transition">
+                  Siguiente →
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+  <!-- END: MainContent -->
+
+  <!-- BEGIN: MainFooter -->
+  <footer class="relative z-10 border-t border-washi-border dark:border-sumi-border bg-washi-base/95 dark:bg-sumi-ink/95 py-6 mt-12 transition-colors">
+    <div class="max-w-[1640px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-mono text-stone-600 dark:text-stone-400">
+      <div class="flex items-center gap-3">
+        <a href="/index.html" class="w-6 h-6 octagon-frame bg-vermilion flex items-center justify-center text-white text-[10px] font-bold">武</a>
+        <div>
+          <span class="font-cinzel font-black text-sumi-black dark:text-stone-100">OECE / RONIN COCKPIT FORENSE</span>
+          <span class="mx-2">|</span>
+          <span>SISTEMA DE CONTROL CONCURRENTE SEACE</span>
+        </div>
+      </div>
+      <div>CANON BUSHIDŌ: JUSTICIA (義) • RECTITUD (正) • INTEGRIDAD (誠)</div>
+    </div>
+  </footer>
+  <!-- END: MainFooter -->
+
+  <!-- Arquitectura Modular Frontend: Script ES Module siguiendo principios SOLID -->
+  <script type="module" src="/js/contratista/app.js"></script>
+</body>
+</html>

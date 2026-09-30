@@ -1,0 +1,70 @@
+# ==========================================
+# MONOREPO GITIGNORE: CONTRATACIONES SEACE
+# ==========================================
+
+# --- Variables de Entorno y Secretos ---
+.env
+*.env
+**/.env
+**/*.env
+!**/.env.example
+!*.env.example
+
+# --- Python & ETL (contracts_etl) ---
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+venv/
+ENV/
+*.egg-info/
+.coverage
+htmlcov/
+
+# --- Datos Pesados y Archivos Binarios (SEACE Raw Data) ---
+contracts_etl/data/raw/*/*.xlsx
+contracts_etl/data/raw/*/*.xls
+!contracts_etl/data/raw/**/.gitkeep
+contracts_etl/data/rejected/*.csv
+!contracts_etl/data/rejected/.gitkeep
+contracts_etl/logs/*.log
+contracts_etl/logs/*.json
+!contracts_etl/logs/.gitkeep
+*.xlsx
+*.xls
+*.zip
+*.tar.gz
+*.rar
+
+# --- Node.js & NestJS (frontend) ---
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+build/
+**/build/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# --- IDEs y Editores de Código ---
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+
+# --- Sistema Operativo ---
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# --- Asistentes y Caches Locales ---
+.gemini/
+**/.gemini/
+.agents/
+**/.agents/

@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html class="scroll-smooth" lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>OECE / SEACE RONIN - Cockpit Forense Bushidō (Auditoría Contrataciones del Estado)</title>
+  
+  <!-- Google Fonts: Cinzel, Cormorant Garamond, Space Grotesk & JetBrains Mono -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&amp;family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  
+  <!-- CSS Compilado con Tailwind y soporte CDN -->
+  <link rel="stylesheet" href="/css/output.css">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            vermilion: {
+              DEFAULT: '#9E1B1E',
+              dark: '#7A1215',
+              light: '#BF262A',
+              crimson: '#C81D25',
+              glow: '#FF2E38'
+            },
+            washi: {
+              base: '#FAF7F2',
+              surface: '#F3EFE7',
+              border: '#E3D7C5',
+              muted: '#7F786B'
+            },
+            sumi: {
+              black: '#111116',
+              deep: '#1A181C',
+              surface: '#242127',
+              border: '#3D3642',
+              ink: '#0B0A0D'
+            },
+            gold: {
+              crest: '#C5A059',
+              light: '#DFBD76',
+              antique: '#9C7A3C'
+            }
+          },
+          fontFamily: {
+            cinzel: ['"Cinzel"', 'serif'],
+            serif: ['"Cormorant Garamond"', 'serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+            sans: ['"Space Grotesk"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .washi-pattern {
+      background-color: #FAF7F2;
+      background-image: radial-gradient(#D8CEBC 0.8px, transparent 0.8px), radial-gradient(#D8CEBC 0.8px, #FAF7F2 0.8px);
+      background-size: 28px 28px;
+      background-position: 0 0, 14px 14px;
+    }
+    .dark .washi-pattern {
+      background-color: #0E0D10;
+      background-image: radial-gradient(#2A2530 0.8px, transparent 0.8px), radial-gradient(#2A2530 0.8px, #0E0D10 0.8px);
+      background-size: 28px 28px;
+      background-position: 0 0, 14px 14px;
+    }
+    .comic-panel {
+      position: relative;
+      border: 1px solid #D6C7B2;
+      background: rgba(254, 252, 248, 0.94);
+      backdrop-filter: blur(8px);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .dark .comic-panel {
+      border: 1px solid #362E3B;
+      background: rgba(22, 19, 25, 0.94);
+    }
+    .comic-panel:hover {
+      border-color: #9E1B1E;
+      box-shadow: 0 10px 30px -10px rgba(158, 27, 30, 0.18);
+    }
+    .kpi-card-selectable {
+      cursor: pointer;
+      position: relative;
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+    .kpi-card-selectable.is-active {
+      border-color: #9E1B1E !important;
+      box-shadow: 0 0 0 2px #9E1B1E, 0 10px 25px -5px rgba(158, 27, 30, 0.25) !important;
+      background: rgba(158, 27, 30, 0.04);
+    }
+    .dark .kpi-card-selectable.is-active {
+      background: rgba(158, 27, 30, 0.12);
+    }
+    .corner-bracket::before, .corner-bracket::after {
+      content: "✦";
+      position: absolute;
+      font-size: 9px;
+      line-height: 1;
+      color: #9E1B1E;
+      pointer-events: none;
+    }
+    .corner-bracket::before { top: -6px; left: -5px; }
+    .corner-bracket::after { bottom: -6px; right: -5px; }
+    .octagon-frame {
+      clip-path: polygon(14% 0%, 86% 0%, 100% 14%, 100% 86%, 86% 100%, 14% 100%, 0% 86%, 0% 14%);
+    }
+    .hanko-seal {
+      border: 2px solid #9E1B1E;
+      color: #9E1B1E;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cinzel', serif;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+    }
+    #dotCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.65;
+    }
+  </style>
+</head>
+<body class="washi-pattern text-sumi-black dark:text-stone-200 antialiased min-h-screen selection:bg-vermilion selection:text-white transition-colors duration-300 relative font-sans">
+  <canvas id="dotCanvas"></canvas>
+
+  <!-- BEGIN: MainHeader -->
+  <header class="relative z-20 border-b border-washi-border dark:border-sumi-border bg-washi-base/95 dark:bg-sumi-black/95 backdrop-blur-md sticky top-0 transition-colors shadow-sm">
+    <div class="max-w-[1640px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Brand & Mon Crest -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 octagon-frame bg-vermilion flex items-center justify-center text-white shadow-sm ring-2 ring-vermilion-light/50 flex-shrink-0">
+          <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+            <path d="M12 2L14.8 9H9.2L12 2ZM3 10H21V12H19V20H17V12H13V22H11V12H7V20H5V12H3V10ZM12 5.5L10.8 8.5H13.2L12 5.5Z"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-cinzel text-lg font-black tracking-widest text-sumi-black dark:text-stone-100 uppercase">OECE / RONIN<span class="text-vermilion">.SEACE</span></span>
+          </div>
+          <p class="text-[10px] font-serif tracking-wider text-sumi-black dark:text-stone-400 italic font-medium">Control Concurrente y Auditoría Forense de Contrataciones Estatales</p>
+        </div>
+      </div>
+
+      <!-- SIDEBAR HORIZONTAL: Suite de Pantallas Integrada en Cabecera -->
+      <nav class="hidden lg:flex items-center gap-1.5 p-1 bg-washi-surface/90 dark:bg-sumi-deep border border-vermilion/40 shadow-sm relative corner-bracket">
+        <div class="flex items-center gap-1 px-2 py-1 bg-sumi-black text-white text-[9px] font-mono tracking-wider font-bold uppercase mr-1 border-r border-vermilion/50">
+          <span class="text-vermilion font-bold text-xs">道</span>
+          <span>SUITE FORENSE:</span>
+        </div>
+        
+        <a href="/index.html" class="nav-tab-btn active px-3 py-1.5 text-xs font-cinzel font-bold tracking-wider uppercase bg-vermilion text-white shadow-sm border border-vermilion-light flex items-center gap-1.5">
+          <span class="text-[9px] text-gold-crest">✦</span>
+          <span>01. VISIÓN GENERAL</span>
+        </a>
+
+        <a href="/contratista.html" onclick="this.href='/contratista.html?year=' + (document.getElementById('filterYear')?.value || '2026')" class="nav-tab-btn px-3 py-1.5 text-xs font-cinzel font-semibold tracking-wider uppercase text-sumi-black dark:text-stone-300 hover:text-vermilion hover:bg-stone-200/50 dark:hover:bg-sumi-surface border border-transparent hover:border-washi-border transition flex items-center gap-1">
+          <span>02. PERFIL CONTRATISTA</span>
+        </a>
+
+        <button class="nav-tab-btn opacity-60 cursor-not-allowed px-3 py-1.5 text-xs font-cinzel font-semibold tracking-wider uppercase text-stone-400 border border-transparent flex items-center gap-1" title="Próxima fase">
+          <span>03. EXPLORADOR POR ÍTEM</span>
+        </button>
+
+        <button class="nav-tab-btn opacity-60 cursor-not-allowed px-3 py-1.5 text-xs font-cinzel font-semibold tracking-wider uppercase text-stone-400 border border-transparent flex items-center gap-1" title="Próxima fase">
+          <span>04. SHA-256 AUDITORÍA</span>
+        </button>
+      </nav>
+
+      <!-- Right Controls: Theme Toggle -->
+      <div class="flex items-center gap-3">
+        <button class="p-1.5 border border-washi-border dark:border-sumi-border bg-white/80 dark:bg-sumi-deep text-sumi-black dark:text-stone-300 hover:border-vermilion text-xs font-mono transition" id="themeToggle" title="Alternar Washi / Sumi">
+          <span id="themeLabel">墨 SUMI-E</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+  <!-- END: MainHeader -->
+
+  <!-- BEGIN: MainContent -->
+  <main class="relative z-10 max-w-[1640px] mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-6">
+
+    <!-- FILTROS -->
+    <section class="comic-panel corner-bracket p-4">
+      <div class="flex items-center justify-between pb-2 mb-3 border-b border-washi-border dark:border-sumi-border">
+        <span class="text-xs font-cinzel font-bold tracking-wider text-sumi-black dark:text-stone-200 uppercase">FILTROS DEL SISTEMA</span>
+        <button class="text-[11px] font-mono underline hover:text-vermilion text-stone-500 transition" onclick="resetFilters()">
+          Limpiar Filtros
+        </button>
+      </div>
+
+      <!-- Selectores en Cascada Limpios y Equilibrados -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2.5">
+        <!-- 1. Ejercicio Fiscal (2022 a 2026 generado con JS) -->
+        <div>
+          <label class="block text-[10px] font-mono font-bold uppercase mb-1">Ejercicio Fiscal</label>
+          <select class="w-full text-xs font-mono font-semibold bg-white dark:bg-sumi-surface border border-washi-border dark:border-sumi-border py-1.5 px-2 focus:ring-vermilion focus:border-vermilion" id="filterYear" onchange="onFilterChange()">
+            <!-- 2026, 2025, 2024, 2023, 2022 -->
+          </select>
+        </div>
+
+        <!-- 2. Periodo Mensual -->
+        <div>
+          <label class="block text-[10px] font-mono font-bold uppercase mb-1">Periodo Mensual</label>
+          <select class="w-full text-xs font-mono font-semibold bg-white dark:bg-sumi-surface border border-washi-border dark:border-sumi-border py-1.5 px-2 focus:ring-vermilion focus:border-vermilion" id="filterMonth" onchange="onFilterChange()">
+            <option value="all" selected>TODOS LOS MESES</option>
+            <option value="1">ENERO</option>
+            <option value="2">FEBRERO</option>
+            <option value="3">MARZO</option>
+            <option value="4">ABRIL</option>
+            <option value="5">MAYO</option>
+            <option value="6">JUNIO</option>
+            <option value="7">JULIO</option>
+            <option value="8">AGOSTO</option>
+            <option value="9">SETIEMBRE</option>
+            <option value="10">OCTUBRE</option>
+            <option value="11">NOVIEMBRE</option>
+            <option value="12">DICIEMBRE</option>
+          </select>
+        </div>
+
+        <!-- 3. Ámbito Departamental -->
+        <div>
+          <label class="block text-[10px] font-mono font-bold uppercase mb-1">Ámbito Departamental</label>
+          <select class="w-full text-xs font-mono font-semibold bg-white dark:bg-sumi-surface border border-washi-border dark:border-sumi-border py-1.5 px-2 focus:ring-vermilion focus:border-vermilion" id="filterDepartamento" onchange="onDepartamentoChange()">
+            <option value="all" selected>TODOS LOS DEPARTAMENTOS</option>
+          </select>
+        </div>
+
+        <!-- 4. Provincia de Ejecución -->
+        <div>
+          <label class="block text-[10px] font-mono font-bold uppercase mb-1">Provincia de Ejecución</label>
+          <select class="w-full text-xs font-mono font-semibold bg-white dark:bg-sumi-surface border border-washi-border dark:border-sumi-border py-1.5 px-2 focus:ring-vermilion focus:border-vermilion disabled:opacity-50" id="filterProvincia" onchange="onProvinciaChange()" disabled>
+            <option value="all" selected>TODAS LAS PROVINCIAS</option>
+          </select>
+        </div>
+
+        <!-- 5. Distrito de Ejecución -->
+        <div>
+          <label class="block text-[10px] font-mono font-bold uppercase mb-1">Distrito de Ejecución</label>
+          <select class="w-full text-xs font-mono font-semibold bg-white dark:bg-sumi-surface border border-washi-border dark:border-sumi-border py-1.5 px-2 focus:ring-vermilion focus:border-vermilion disabled:opacity-50" id="filterDistrito" onchange="onFilterChange()" disabled>
+            <option value="all" selected>TODOS LOS DISTRITOS</option>
+          </select>
+        </div>
+
+        <!-- 6. Modalidad de Contratación -->
+        <div>
+          <label class="block text-[10px] font-mono font-bold uppercase mb-1">Modalidad</label>
+          <select class="w-full text-xs font-mono font-semibold bg-white dark:bg-sumi-surface border border-washi-border dark:border-sumi-border py-1.5 px-2 focus:ring-vermilion focus:border-vermilion" id="filterTipoProceso" onchange="onFilterChange()">
+            <option value="all" selected>TODAS</option>
+          </select>
+        </div>
+
+        <!-- 7. Estado del Ítem -->
+        <div>
+          <label class="block text-[10px] font-mono font-bold uppercase mb-1">Estado</label>
+          <select class="w-full text-xs font-mono font-semibold bg-white dark:bg-sumi-surface border border-washi-border dark:border-sumi-border py-1.5 px-2 focus:ring-vermilion focus:border-vermilion" id="filterEstado" onchange="onFilterChange()">
+            <option value="all" selected>TODOS</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- LAS 4 TARJETAS KPI (DIRECTAS SIN TÍTULO REDUNDANTE) -->
+    <section>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        
+        <!-- KPI 1: Total Contratos Formalizados -->
+        <div class="comic-panel p-4 kpi-card-selectable" id="kpi-1">
+          <div class="flex items-center justify-between text-xs font-mono text-stone-500 dark:text-stone-400 mb-1">
+            <span class="font-cinzel font-bold text-sumi-black dark:text-stone-200 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 bg-vermilion rotate-45 inline-block"></span> CONTRATOS FORMALIZADOS
+            </span>
+          </div>
+          <div class="text-2xl font-mono font-bold text-sumi-black dark:text-stone-100" id="valKpiContratos">---</div>
+          <div class="text-[10px] font-serif text-stone-600 dark:text-stone-400 italic mt-0.5">Contratos suscritos en el periodo</div>
+          <div class="mt-2.5 h-1 w-full bg-stone-200 dark:bg-stone-800 overflow-hidden"><div class="h-full bg-vermilion w-[85%]"></div></div>
+        </div>
+
+        <!-- KPI 2: Monto Total Acumulado Contratado -->
+        <div class="comic-panel p-4 kpi-card-selectable" id="kpi-2">
+          <div class="flex items-center justify-between text-xs font-mono text-stone-500 dark:text-stone-400 mb-1">
+            <span class="font-cinzel font-bold text-sumi-black dark:text-stone-200 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 bg-vermilion rotate-45 inline-block"></span> MONTO TOTAL CONTRATADO
+            </span>
+            <span class="text-gold-crest font-bold text-[10px]">PEN (S/)</span>
+          </div>
+          <div class="text-2xl font-mono font-bold text-sumi-black dark:text-stone-100" id="valKpiMonto">---</div>
+          <div class="text-[10px] font-serif text-stone-600 dark:text-stone-400 italic mt-0.5">Volumen fiscal en moneda nacional</div>
+          <div class="mt-2.5 h-1 w-full bg-stone-200 dark:bg-stone-800 overflow-hidden"><div class="h-full bg-gold-crest w-[72%]"></div></div>
+        </div>
+
+        <!-- KPI 3: Contratistas Activos (RUCs Únicos) -->
+        <div class="comic-panel p-4 kpi-card-selectable" id="kpi-3">
+          <div class="flex items-center justify-between text-xs font-mono text-stone-500 dark:text-stone-400 mb-1">
+            <span class="font-cinzel font-bold text-sumi-black dark:text-stone-200 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 bg-vermilion rotate-45 inline-block"></span> CONTRATISTAS ACTIVOS
+            </span>
+            <span class="text-stone-500 font-bold text-[10px]">RUCs</span>
+          </div>
+          <div class="text-2xl font-mono font-bold text-sumi-black dark:text-stone-100" id="valKpiContratistas">---</div>
+          <div class="text-[10px] font-serif text-stone-600 dark:text-stone-400 italic mt-0.5">Proveedores con contrato adjudicado</div>
+          <div class="mt-2.5 h-1 w-full bg-stone-200 dark:bg-stone-800 overflow-hidden"><div class="h-full bg-sumi-black dark:bg-stone-300 w-[55%]"></div></div>
+        </div>
+
+        <!-- KPI 4: Tasa de Postor Único / Bandera Roja Crítica -->
+        <div class="comic-panel p-4 kpi-card-selectable ring-1 ring-vermilion/50" id="kpi-4">
+          <div class="flex items-center justify-between text-xs font-mono text-vermilion mb-1 font-bold">
+            <span class="font-cinzel flex items-center gap-1">
+              <span class="w-1.5 h-1.5 bg-vermilion rotate-45 inline-block"></span> TASA DE POSTOR ÚNICO
+            </span>
+            <span class="px-1.5 py-0.2 border border-vermilion text-[9px] bg-vermilion text-white font-mono">BANDERA ROJA</span>
+          </div>
+          <div class="text-2xl font-mono font-bold text-vermilion" id="valKpiPostorUnico">---</div>
+          <div class="text-[10px] font-serif text-vermilion/90 italic mt-0.5">Licitaciones con un solo postor en puja</div>
+          <div class="mt-2.5 h-1 w-full bg-vermilion/20 overflow-hidden"><div class="h-full bg-vermilion" id="kpiBarPostorUnico" style="width: 39%"></div></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- LAS 3 GRÁFICAS SELECCIONADAS -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- COLUMNA IZQUIERDA (7 cols): TOP 10 CONTRATISTAS Y CONSORCIOS (CON TOGGLE) -->
+      <section class="lg:col-span-7 space-y-6">
+        <div class="comic-panel corner-bracket p-5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-washi-border dark:border-sumi-border pb-3 mb-4 gap-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-mono text-vermilion uppercase tracking-widest font-bold">CONCENTRACIÓN DE GANADORES</span>
+                <span class="hanko-seal text-[8px] px-1 py-0.2">TOP 10</span>
+              </div>
+              <h2 class="font-cinzel text-lg font-bold text-sumi-black dark:text-stone-100 uppercase tracking-wide">
+                Top Contratistas &amp; Consorcios
+              </h2>
+            </div>
+
+            <!-- TOGGLE: Por Monto Adjudicado (S/) vs Por Cantidad de Contratos -->
+            <div class="inline-flex p-0.5 border border-washi-border dark:border-sumi-border bg-white dark:bg-sumi-deep text-xs font-mono">
+              <button class="px-2.5 py-1 font-bold bg-vermilion text-white shadow-sm transition" id="btnToggleMonto" onclick="switchRankingToggle('monto')">
+                Por Monto Adjudicado (S/)
+              </button>
+              <button class="px-2.5 py-1 text-sumi-black dark:text-stone-300 hover:text-vermilion transition" id="btnToggleCantidad" onclick="switchRankingToggle('cantidad')">
+                Por Cantidad de Contratos
+              </button>
+            </div>
+          </div>
+
+          <!-- Contenedor dinámico del ranking -->
+          <div class="space-y-2.5 font-mono text-xs" id="topContratistasList">
+            <div class="p-6 text-center text-stone-400">Consultando datos de contratistas en MySQL...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- COLUMNA DERECHA (5 cols): MODALIDADES + TOP ENTIDADES -->
+      <aside class="lg:col-span-5 space-y-6">
+        
+        <!-- GRÁFICA 2: DISTRIBUCIÓN POR MODALIDAD DE CONTRATACIÓN -->
+        <div class="comic-panel corner-bracket p-5">
+          <div class="flex items-center justify-between border-b border-washi-border dark:border-sumi-border pb-2.5 mb-3.5">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-mono text-vermilion uppercase tracking-widest font-bold">NIVEL DE COMPETENCIA</span>
+                <span class="hanko-seal text-[8px] px-1 py-0.2">MODALIDAD</span>
+              </div>
+              <h3 class="font-cinzel text-base font-bold text-sumi-black dark:text-stone-100 uppercase tracking-wide">
+                Distribución por Modalidad de Contratación
+              </h3>
+            </div>
+            <span class="text-[10px] font-mono text-stone-500 font-semibold">% Sobre Gasto</span>
+          </div>
+
+          <div class="space-y-3 font-mono text-xs" id="distribucionProcesosList">
+            <div class="p-4 text-center text-stone-400">Cargando distribución de procesos...</div>
+          </div>
+        </div>
+
+        <!-- GRÁFICA 3: TOP 10 ENTIDADES CON MAYOR PRESUPUESTO -->
+        <div class="comic-panel corner-bracket p-5">
+          <div class="flex items-center justify-between border-b border-washi-border dark:border-sumi-border pb-2.5 mb-3.5">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-mono text-vermilion uppercase tracking-widest font-bold">CONCENTRACIÓN INSTITUCIONAL</span>
+                <span class="hanko-seal text-[8px] px-1 py-0.2">ENTIDADES</span>
+              </div>
+              <h3 class="font-cinzel text-base font-bold text-sumi-black dark:text-stone-100 uppercase tracking-wide">
+                Top Entidades con Mayor Presupuesto Formalizado
+              </h3>
+            </div>
+            <span class="text-[10px] font-mono text-vermilion font-bold">TOP COMPRADORES</span>
+          </div>
+
+          <div class="space-y-2.5 font-mono text-xs max-h-80 overflow-y-auto pr-1" id="topEntidadesList">
+            <div class="p-4 text-center text-stone-400">Cargando entidades compradoras...</div>
+          </div>
+        </div>
+
+      </aside>
+
+    </div>
+
+  </main>
+  <!-- END: MainContent -->
+
+  <!-- BEGIN: MainFooter -->
+  <footer class="relative z-10 border-t border-washi-border dark:border-sumi-border bg-washi-base/95 dark:bg-sumi-ink/95 py-6 mt-12 transition-colors">
+    <div class="max-w-[1640px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-mono text-stone-600 dark:text-stone-400">
+      <div class="flex items-center gap-3">
+        <div class="w-6 h-6 octagon-frame bg-vermilion flex items-center justify-center text-white text-[10px] font-bold">武</div>
+        <div>
+          <span class="font-cinzel font-black text-sumi-black dark:text-stone-100">OECE / RONIN COCKPIT FORENSE</span>
+          <span class="mx-2">|</span>
+          <span>SISTEMA DE CONTROL CONCURRENTE SEACE</span>
+        </div>
+      </div>
+      <div>CANON BUSHIDŌ: JUSTICIA (義) • RECTITUD (正) • INTEGRIDAD (誠)</div>
+    </div>
+  </footer>
+  <!-- END: MainFooter -->
+
+  <!-- Script principal del cliente conectado a NestJS -->
+  <script src="/js/main.js"></script>
+</body>
+</html>

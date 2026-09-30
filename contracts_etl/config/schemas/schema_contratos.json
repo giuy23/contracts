@@ -1,0 +1,37 @@
+{
+  "table_name": "contratos",
+  "primary_key": ["codigo_contrato", "numero_item"],
+  "foreign_keys": [
+    {
+      "columns": ["codigo_convocatoria", "numero_item"],
+      "reference_table": "datos_convocatoria",
+      "reference_columns": ["codigo_convocatoria", "numero_item"]
+    }
+  ],
+  "columns": [
+    {"excel_column": "codigoentidad", "sql_column": "codigo_entidad", "sql_type": "VARCHAR(20)", "python_type": "str", "nullable": true},
+    {"excel_column": "codigoconvocatoria", "sql_column": "codigo_convocatoria", "sql_type": "VARCHAR(20)", "python_type": "str", "nullable": false},
+    {"excel_column": "descripcion_proceso", "sql_column": "descripcion_proceso", "sql_type": "TEXT", "python_type": "str", "nullable": true},
+    {"excel_column": "n_cod_contrato", "sql_column": "id_contrato_sistema", "sql_type": "BIGINT", "python_type": "int", "nullable": false},
+    {"excel_column": "codigo_contrato", "sql_column": "codigo_contrato", "sql_type": "VARCHAR(50)", "python_type": "str", "nullable": false},
+    {"excel_column": "num_contrato", "sql_column": "numero_contrato", "sql_type": "VARCHAR(100)", "python_type": "str", "nullable": true},
+    {"excel_column": "num_item", "sql_column": "numero_item", "sql_type": "INT", "python_type": "int", "nullable": false},
+    {"excel_column": "monto_contratado_total", "sql_column": "monto_contratado_total", "sql_type": "DECIMAL(16,2)", "python_type": "float", "nullable": true},
+    {"excel_column": "monto_contratado_item", "sql_column": "monto_contratado_item", "sql_type": "DECIMAL(16,2)", "python_type": "float", "nullable": true},
+    {"excel_column": "monto_adicional", "sql_column": "monto_adicional", "sql_type": "DECIMAL(16,2)", "python_type": "float", "nullable": true},
+    {"excel_column": "monto_reduccion", "sql_column": "monto_reduccion", "sql_type": "DECIMAL(16,2)", "python_type": "float", "nullable": true},
+    {"excel_column": "monto_prorroga", "sql_column": "monto_prorroga", "sql_type": "DECIMAL(16,2)", "python_type": "float", "nullable": true},
+    {"excel_column": "monto_complementario", "sql_column": "monto_complementario", "sql_type": "DECIMAL(16,2)", "python_type": "float", "nullable": true},
+    {"excel_column": "moneda", "sql_column": "moneda", "sql_type": "VARCHAR(10)", "python_type": "str", "nullable": true},
+    {"excel_column": "ruc_contratista", "sql_column": "ruc_contratista", "sql_type": "VARCHAR(20)", "python_type": "str", "nullable": false},
+    {"excel_column": "ruc_destinatario_pago", "sql_column": "ruc_destinatario_pago", "sql_type": "VARCHAR(20)", "python_type": "str", "nullable": true},
+    {"excel_column": "tieneresolucion", "sql_column": "tiene_resolucion", "sql_type": "VARCHAR(10)", "python_type": "str", "nullable": true},
+    {"excel_column": "urlcontrato", "sql_column": "url_contrato", "sql_type": "TEXT", "python_type": "str", "nullable": true},
+    {"excel_column": "espublicado", "sql_column": "es_publicado", "sql_type": "VARCHAR(10)", "python_type": "str", "nullable": true},
+    {"excel_column": "fecha_publicacion_contrato", "sql_column": "fecha_publicacion_contrato", "sql_type": "DATE", "python_type": "date", "nullable": true},
+    {"excel_column": "fecha_suscripcion_contrato", "sql_column": "fecha_suscripcion_contrato", "sql_type": "DATE", "python_type": "date", "nullable": true},
+    {"excel_column": "fecha_vigencia_inicial", "sql_column": "fecha_vigencia_inicial", "sql_type": "DATE", "python_type": "date", "nullable": true},
+    {"excel_column": "fecha_vigencia_final", "sql_column": "fecha_vigencia_final", "sql_type": "DATE", "python_type": "date", "nullable": true},
+    {"excel_column": "fecha_vigencia_fin_actualizada", "sql_column": "fecha_vigencia_fin_actualizada", "sql_type": "DATE", "python_type": "date", "nullable": true}
+  ]
+}
