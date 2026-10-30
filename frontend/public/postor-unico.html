@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html class="scroll-smooth" lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Radar Regional de Postor Único - OECE / RONIN.SEACE</title>
+  
+  <!-- Google Fonts: Cinzel, Cormorant Garamond, Space Grotesk & JetBrains Mono -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&amp;family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  
+  <!-- CSS Compilado con Tailwind y soporte CDN -->
+  <link rel="stylesheet" href="/css/output.css">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            vermilion: {
+              DEFAULT: '#9E1B1E',
+              dark: '#7A1215',
+              light: '#BF262A',
+              crimson: '#C81D25',
+              glow: '#FF2E38'
+            },
+            washi: {
+              base: '#FAF7F2',
+              surface: '#F3EFE7',
+              border: '#E3D7C5',
+              muted: '#7F786B'
+            },
+            sumi: {
+              black: '#111116',
+              deep: '#1A181C',
+              surface: '#242127',
+              border: '#3D3642',
+              ink: '#0B0A0D'
+            },
+            gold: {
+              crest: '#C5A059',
+              light: '#DFBD76',
+              antique: '#9C7A3C'
+            }
+          },
+          fontFamily: {
+            cinzel: ['"Cinzel"', 'serif'],
+            serif: ['"Cormorant Garamond"', 'serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+            sans: ['"Space Grotesk"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .washi-pattern {
+      background-color: #FAF7F2;
+      background-image: radial-gradient(#D8CEBC 0.8px, transparent 0.8px), radial-gradient(#D8CEBC 0.8px, #FAF7F2 0.8px);
+      background-size: 28px 28px;
+      background-position: 0 0, 14px 14px;
+    }
+    .dark .washi-pattern {
+      background-color: #0E0D10;
+      background-image: radial-gradient(#2A2530 0.8px, transparent 0.8px), radial-gradient(#2A2530 0.8px, #0E0D10 0.8px);
+      background-size: 28px 28px;
+      background-position: 0 0, 14px 14px;
+    }
+    .comic-panel {
+      position: relative;
+      border: 1px solid #D6C7B2;
+      background: rgba(254, 252, 248, 0.94);
+      backdrop-filter: blur(8px);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .dark .comic-panel {
+      border: 1px solid #362E3B;
+      background: rgba(22, 19, 25, 0.94);
+    }
+    .comic-panel:hover {
+      border-color: #9E1B1E;
+      box-shadow: 0 10px 30px -10px rgba(158, 27, 30, 0.18);
+    }
+    .corner-bracket::before, .corner-bracket::after {
+      content: "✦";
+      position: absolute;
+      font-size: 9px;
+      line-height: 1;
+      color: #9E1B1E;
+      pointer-events: none;
+    }
+    .corner-bracket::before { top: -6px; left: -5px; }
+    .corner-bracket::after { bottom: -6px; right: -5px; }
+    .octagon-frame {
+      clip-path: polygon(14% 0%, 86% 0%, 100% 14%, 100% 86%, 86% 100%, 14% 100%, 0% 86%, 0% 14%);
+    }
+    .hanko-seal {
+      border: 2px solid #9E1B1E;
+      color: #9E1B1E;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cinzel', serif;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+    }
+    .heatmap-tile {
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+    .heatmap-tile.is-selected {
+      border-color: #9E1B1E !important;
+      box-shadow: 0 0 0 2px #9E1B1E, 0 8px 20px -4px rgba(158, 27, 30, 0.32) !important;
+    }
+    .peru-dept-path {
+      cursor: pointer;
+      transition: fill 0.22s ease, stroke 0.22s ease, stroke-width 0.22s ease, filter 0.22s ease;
+    }
+    .peru-dept-path:hover {
+      filter: brightness(1.18) drop-shadow(0 0 6px rgba(158, 27, 30, 0.55));
+      stroke: #C5A059 !important;
+      stroke-width: 2.2px !important;
+    }
+    .peru-dept-path.is-selected {
+      stroke: #FFF8E7 !important;
+      stroke-width: 2.6px !important;
+      filter: drop-shadow(0 0 10px rgba(255, 46, 56, 0.75));
+    }
+    #dotCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.65;
+    }
+  </style>
+</head>
+<body class="washi-pattern text-sumi-black dark:text-stone-200 antialiased min-h-screen selection:bg-vermilion selection:text-white transition-colors duration-300 relative font-sans">
+  <canvas id="dotCanvas"></canvas>
+
+  <!-- BEGIN: MainHeader -->
+  <header class="relative z-20 border-b border-washi-border dark:border-sumi-border bg-washi-base/95 dark:bg-sumi-black/95 backdrop-blur-md sticky top-0 transition-colors shadow-sm">
+    <div class="max-w-[1640px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Brand & Mon Crest -->
+      <div class="flex items-center gap-3">
+        <a id="headerLogoLink" href="/index.html" class="w-10 h-10 octagon-frame bg-vermilion flex items-center justify-center text-white shadow-sm ring-2 ring-vermilion-light/50 flex-shrink-0 hover:scale-105 transition" title="Ir al Cockpit General">
+          <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+            <path d="M12 2L14.8 9H9.2L12 2ZM3 10H21V12H19V20H17V12H13V22H11V12H7V20H5V12H3V10ZM12 5.5L10.8 8.5H13.2L12 5.5Z"></path>
+          </svg>
+        </a>
+        <div>
+          <div class="flex items-center gap-2">
+            <a id="headerBrandLink" href="/index.html" class="font-cinzel text-lg font-black tracking-widest text-sumi-black dark:text-stone-100 uppercase hover:text-vermilion transition">
+              OECE / RONIN<span class="text-vermilion">.SEACE</span>
+            </a>
+          </div>
+          <p class="text-[10px] font-serif tracking-wider text-sumi-black dark:text-stone-400 italic font-medium">Radar Territorial de Postor Único y Dominancia por Empresa Real (Prorrateo 1/N)</p>
+        </div>
+      </div>
+
+      <!-- SIDEBAR HORIZONTAL: Suite de Pantallas Integrada en Cabecera -->
+      <nav class="hidden lg:flex items-center gap-1.5 p-1 bg-washi-surface/90 dark:bg-sumi-deep border border-vermilion/40 shadow-sm relative corner-bracket">
+        <div class="flex items-center gap-1 px-2 py-1 bg-sumi-black text-white text-[9px] font-mono tracking-wider font-bold uppercase mr-1 border-r border-vermilion/50">
+          <span class="text-vermilion font-bold text-xs">道</span>
+          <span>SUITE FORENSE:</span>
+        </div>
+        
+        <a id="navLinkGeneral" href="/index.html" class="nav-tab-btn px-3 py-1.5 text-xs font-cinzel font-semibold tracking-wider uppercase text-sumi-black dark:text-stone-300 hover:text-vermilion hover:bg-stone-200/50 dark:hover:bg-sumi-surface border border-transparent hover:border-washi-border transition flex items-center gap-1">
+          <span>01. VISIÓN GENERAL</span>
+        </a>
+
+        <a id="navLinkContratista" href="/contratista.html" class="nav-tab-btn px-3 py-1.5 text-xs font-cinzel font-semibold tracking-wider uppercase text-sumi-black dark:text-stone-300 hover:text-vermilion hover:bg-stone-200/50 dark:hover:bg-sumi-surface border border-transparent hover:border-washi-border transition flex items-center gap-1">
+          <span>02. PERFIL CONTRATISTA</span>
+        </a>
+
+        <a href="/postor-unico.html" class="nav-tab-btn active px-3 py-1.5 text-xs font-cinzel font-bold tracking-wider uppercase bg-vermilion text-white shadow-sm border border-vermilion-light flex items-center gap-1.5">
+          <span class="text-[9px] text-gold-crest">✦</span>
+          <span>03. RADAR POSTOR ÚNICO</span>
+        </a>
+
+        <button class="nav-tab-btn opacity-60 cursor-not-allowed px-3 py-1.5 text-xs font-cinzel font-semibold tracking-wider uppercase text-stone-400 border border-transparent flex items-center gap-1" title="Próxima fase">
+          <span>04. SHA-256 AUDITORÍA</span>
+        </button>
+      </nav>
+
+      <!-- Right Controls: Quick RUC & Theme Toggle -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <form onsubmit="onQuickRucSearch(event)" class="relative flex items-center">
+          <input 
+            id="quickRucInput" 
+            type="text" 
+            placeholder="Auditar RUC (11 dígitos)..." 
+            maxlength="11"
+            class="pl-2 pr-7 py-1 text-xs font-mono bg-white/90 dark:bg-sumi-deep border border-washi-border dark:border-sumi-border focus:border-vermilion focus:ring-1 focus:ring-vermilion outline-none w-36 sm:w-44 text-sumi-black dark:text-stone-200"
+          >
+          <button type="submit" class="absolute right-1 text-xs text-vermilion hover:scale-110 transition font-bold" title="Consultar RUC">
+            🔍
+          </button>
+        </form>
+
+        <button class="p-1.5 border border-washi-border dark:border-sumi-border bg-white/80 dark:bg-sumi-deep text-sumi-black dark:text-stone-300 hover:border-vermilion text-xs font-mono transition" id="themeToggle" title="Alternar Washi / Sumi">
+          <span id="themeLabel">墨 SUMI-E</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+  <!-- END: MainHeader -->
+
+  <!-- BEGIN: MainContent -->
+  <main class="relative z-10 max-w-[1640px] mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-6">
+
+    <!-- ALERTA DE BÚSQUEDA RÁPIDA DE RUC -->
+    <div id="quickRucError" class="hidden p-2.5 bg-red-50 dark:bg-vermilion/10 border-l-4 border-vermilion text-xs font-mono text-vermilion dark:text-red-300 flex items-center justify-between">
+      <span id="quickRucErrorText"></span>
+      <button type="button" class="text-xs hover:opacity-80" onclick="document.getElementById('quickRucError').classList.add('hidden')">✕</button>
+    </div>
+
+    <!-- FILTROS PERSISTENTES DEL RADAR -->
+    <section class="comic-panel corner-bracket p-4">
+      <div class="flex flex-wrap items-center justify-between pb-2 mb-3 border-b border-washi-border dark:border-sumi-border gap-2">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-cinzel font-bold tracking-wider text-sumi-black dark:text-stone-200 uppercase">FILTROS DEL RADAR TERRITORIAL (PERSISTENCIA ACTIVA)</span>
+          <span id="badgeNivelGeoHeader" class="hanko-seal text-[8px] px-1.5 py-0.2">DEPARTAMENTO</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-[10px] font-mono text-stone-500 dark:text-stone-400">Haga clic en una región del Mapa de Calor o Dona para desglosar las empresas adjudicadas</span>
+          <button class="text-[11px] font-mono underline hover:text-vermilion text-stone-500 transition" onclick="resetRadarFilters()">
+            Limpiar Filtros
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+        <!-- 1. Ejercicio Fiscal -->
+        <div>
+          <label class="block text-[10px] font-mono font-bold uppercase mb-1">Ejercicio Fiscal</label>
+          <select class="w-full text-xs font-mono font-semibold bg-white dark:bg-sumi-surface border border-washi-border dark:border-sumi-border py-1.5 px-2 focus:ring-vermilion focus:border-vermilion" id="filterYear" onchange="onRadarFilterChange()">
+            <option value="2026" selected>2026</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+            <option value="2023">2023</option>
+            <option value="2022">2022</option>
+            <option value="all">TODOS (2022-2026)</option>
+          </select>
+        </div>
+
+        <!-- 2. Periodo Mensual -->
+        <div>
+          <label class="block text-[10px] font-mono font-bold uppercase mb-1">Periodo Mensual</label>
+          <select class="w-full text-xs font-mono font-semibold bg-white dark:bg-sumi-surface border border-washi-border dark:border-sumi-border py-1.5 px-2 focus:ring-vermilion focus:border-vermilion" id="filterMonth" onchange="onRadarFilterChange()">
+            <option value="all" selected>TODOS LOS MESES</option>
+            <option value="1">ENERO</option>
+            <option value="2">FEBRERO</option>
+            <option value="3">MARZO</option>
+            <option value="4">ABRIL</option>
+            <option value="5">MAYO</option>
+            <option value="6">JUNIO</option>
+            <option value="7">JULIO</option>
+            <option value="8">AGOSTO</option>
+            <option value="9">SETIEMBRE</option>
+            <option value="10">OCTUBRE</option>
+            <option value="11">NOVIEMBRE</option>
+            <option value="12">DICIEMBRE</option>
+          </select>
+        </div>
+
+        <!-- 3. Ámbito Departamental -->
+        <div>
+          <label class="block text-[10px] font-mono font-bold uppercase mb-1">Ámbito Departamental</label>
+          <select class="w-full text-xs font-mono font-semibold bg-white dark:bg-sumi-surface border border-washi-border dark:border-sumi-border py-1.5 px-2 focus:ring-vermilion focus:border-vermilion" id="filterDepartamento" onchange="onRadarDepartamentoChange()">
+            <option value="all" selected>TODOS</option>
+          </select>
+        </div>
+
+        <!-- 4. Provincia de Ejecución -->
+        <div>
+          <label class="block text-[10px] font-mono font-bold uppercase mb-1">Provincia de Ejecución</label>
+          <select class="w-full text-xs font-mono font-semibold bg-white dark:bg-sumi-surface border border-washi-border dark:border-sumi-border py-1.5 px-2 focus:ring-vermilion focus:border-vermilion disabled:opacity-50" id="filterProvincia" onchange="onRadarProvinciaChange()" disabled>
+            <option value="all" selected>TODAS</option>
+          </select>
+        </div>
+
+        <!-- 5. Distrito de Ejecución -->
+        <div>
+          <label class="block text-[10px] font-mono font-bold uppercase mb-1">Distrito de Ejecución</label>
+          <select class="w-full text-xs font-mono font-semibold bg-white dark:bg-sumi-surface border border-washi-border dark:border-sumi-border py-1.5 px-2 focus:ring-vermilion focus:border-vermilion disabled:opacity-50" id="filterDistrito" onchange="onRadarFilterChange()" disabled>
+            <option value="all" selected>TODOS</option>
+          </select>
+        </div>
+
+        <!-- 6. Modalidad de Contratación -->
+        <div>
+          <label class="block text-[10px] font-mono font-bold uppercase mb-1">Modalidad</label>
+          <select class="w-full text-xs font-mono font-semibold bg-white dark:bg-sumi-surface border border-washi-border dark:border-sumi-border py-1.5 px-2 focus:ring-vermilion focus:border-vermilion" id="filterTipoProceso" onchange="onRadarFilterChange()">
+            <option value="all" selected>TODAS</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 TARJETAS KPI DEL RADAR DE POSTOR ÚNICO -->
+    <section>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        
+        <!-- KPI 1: Contratos con Postor Único -->
+        <div class="comic-panel p-4">
+          <div class="flex items-center justify-between text-xs font-mono text-stone-500 dark:text-stone-400 mb-1">
+            <span class="font-cinzel font-bold text-sumi-black dark:text-stone-200 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 bg-vermilion rotate-45 inline-block"></span> CONTRATOS POSTOR ÚNICO
+            </span>
+            <span class="hanko-seal text-[8px] px-1 py-0.2">1 OFERTANTE</span>
+          </div>
+          <div class="text-2xl font-mono font-bold text-vermilion" id="valPuContratos">---</div>
+          <div class="text-[10px] font-serif text-stone-600 dark:text-stone-400 italic mt-0.5" id="subPuContratos">De --- contratos evaluados en el ámbito</div>
+          <div class="mt-2.5 h-1 w-full bg-stone-200 dark:bg-stone-800 overflow-hidden"><div class="h-full bg-vermilion w-[75%]"></div></div>
+        </div>
+
+        <!-- KPI 2: Tasa de Postor Único en el Ámbito -->
+        <div class="comic-panel p-4 ring-1 ring-vermilion/40">
+          <div class="flex items-center justify-between text-xs font-mono text-vermilion mb-1 font-bold">
+            <span class="font-cinzel flex items-center gap-1">
+              <span class="w-1.5 h-1.5 bg-vermilion rotate-45 inline-block"></span> INCIDENCIA DE POSTOR ÚNICO
+            </span>
+            <span class="px-1.5 py-0.2 border border-vermilion text-[9px] bg-vermilion text-white font-mono">BANDERA ROJA</span>
+          </div>
+          <div class="text-2xl font-mono font-bold text-vermilion" id="valPuTasa">---</div>
+          <div class="text-[10px] font-serif text-vermilion/90 italic mt-0.5">Proporción adjudicada sin competencia efectiva</div>
+          <div class="mt-2.5 h-1 w-full bg-vermilion/20 overflow-hidden"><div class="h-full bg-vermilion" id="barPuTasa" style="width: 35%"></div></div>
+        </div>
+
+        <!-- KPI 3: Monto Adjudicado a Postores Únicos -->
+        <div class="comic-panel p-4">
+          <div class="flex items-center justify-between text-xs font-mono text-stone-500 dark:text-stone-400 mb-1">
+            <span class="font-cinzel font-bold text-sumi-black dark:text-stone-200 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 bg-vermilion rotate-45 inline-block"></span> MONTO SIN COMPETENCIA
+            </span>
+            <span class="text-gold-crest font-bold text-[10px]">PEN (S/)</span>
+          </div>
+          <div class="text-2xl font-mono font-bold text-sumi-black dark:text-stone-100" id="valPuMonto">---</div>
+          <div class="text-[10px] font-serif text-stone-600 dark:text-stone-400 italic mt-0.5">Volumen fiscal adjudicado en licitaciones de 1 postor</div>
+          <div class="mt-2.5 h-1 w-full bg-stone-200 dark:bg-stone-800 overflow-hidden"><div class="h-full bg-gold-crest w-[68%]"></div></div>
+        </div>
+
+        <!-- KPI 4: Región con Mayor Concentración -->
+        <div class="comic-panel p-4">
+          <div class="flex items-center justify-between text-xs font-mono text-stone-500 dark:text-stone-400 mb-1">
+            <span class="font-cinzel font-bold text-sumi-black dark:text-stone-200 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 bg-vermilion rotate-45 inline-block"></span> FOCO TERRITORIAL CRÍTICO
+            </span>
+            <span class="text-stone-500 font-bold text-[10px]" id="lblKpiNivelGeo">REGIÓN</span>
+          </div>
+          <div class="text-xl font-cinzel font-black text-sumi-black dark:text-stone-100 truncate" id="valPuRegionCritica">---</div>
+          <div class="text-[10px] font-serif text-stone-600 dark:text-stone-400 italic mt-0.5" id="subPuRegionCritica">Mayor volumen de adjudicaciones con postor único</div>
+          <div class="mt-2.5 h-1 w-full bg-stone-200 dark:bg-stone-800 overflow-hidden"><div class="h-full bg-sumi-black dark:bg-stone-300 w-[80%]"></div></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- FILA SUPERIOR BENTO: MAPA DE CALOR REGIONAL (7 COLS) + DONA DE CONCENTRACIÓN (5 COLS) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- COLUMNA IZQUIERDA (7 cols): MAPA DE CALOR GEOGRÁFICO DEL PERÚ INTERACTIVO -->
+      <section class="lg:col-span-7">
+        <div class="comic-panel corner-bracket p-5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-washi-border dark:border-sumi-border pb-3 mb-4 gap-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-mono text-vermilion uppercase tracking-widest font-bold">CARTOGRAFÍA TÉRMICA FORENSE DEL PERÚ</span>
+                <span id="badgeHeatmapNivel" class="hanko-seal text-[8px] px-1.5 py-0.2">DEPARTAMENTO</span>
+              </div>
+              <h2 class="font-cinzel text-lg font-bold text-sumi-black dark:text-stone-100 uppercase tracking-wide">
+                Mapa de Calor del Perú: Concentración de Postor Único
+              </h2>
+            </div>
+
+            <!-- Escala de Calor -->
+            <div class="flex flex-wrap items-center gap-2 text-[10px] font-mono">
+              <span class="text-stone-400">Calor PU:</span>
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 inline-block" style="background:#D6C7B2;border:1px solid #7F786B"></span> 0</span>
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 inline-block" style="background:#DFBD76;border:1px solid #9C7A3C"></span> Bajo</span>
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 inline-block" style="background:#EA580C;border:1px solid #9A3412"></span> Medio</span>
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 inline-block" style="background:#DC2626;border:1px solid #991B1B"></span> Alto</span>
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 inline-block" style="background:#7A1215;border:1px solid #FF2E38"></span> Crítico</span>
+            </div>
+          </div>
+
+          <div id="heatmapGridContainer" class="min-h-[440px]">
+            <div class="p-8 text-center text-stone-400 font-mono text-xs">
+              <span class="inline-block animate-spin mr-2">☯</span> Renderizando mapa térmico del Perú...
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- COLUMNA DERECHA (5 cols): GRÁFICA DE DONA DE CONCENTRACIÓN TERRITORIAL (SIEMPRE UN NIVEL INFERIOR: PROVINCIA -> DISTRITO) -->
+      <aside class="lg:col-span-5">
+        <div class="comic-panel corner-bracket p-5">
+          <div class="flex flex-col gap-1.5 border-b border-washi-border dark:border-sumi-border pb-3 mb-4">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-mono text-vermilion uppercase tracking-widest font-bold">SUB-NIVEL TERRITORIAL</span>
+                <span id="badgeDonutSublevel" class="hanko-seal text-[8px] px-1.5 py-0.2">PROVINCIAS DE LIMA</span>
+              </div>
+              <button
+                id="btnDonutBackToProvincias"
+                type="button"
+                onclick="resetDonutToProvincias()"
+                class="hidden px-2 py-0.5 text-[10px] font-mono border border-vermilion/50 text-vermilion hover:bg-vermilion hover:text-white transition"
+              >
+                ← Ver Provincias
+              </button>
+            </div>
+            <div class="flex items-center justify-between">
+              <h3 class="font-cinzel text-base font-bold text-sumi-black dark:text-stone-100 uppercase tracking-wide" id="titleDonutSublevel">
+                Distribución Regional de Postores Únicos
+              </h3>
+              <span class="text-[10px] font-mono text-stone-500 font-semibold">% Sobre Sub-nivel</span>
+            </div>
+            <p id="subtitleDonutScope" class="text-[11px] font-serif italic text-stone-500 dark:text-stone-400">
+              Desglose por Provincias del departamento activo (haga clic en una provincia para ver sus distritos)
+            </p>
+          </div>
+
+          <div id="puDonutContainer" class="min-h-[360px] font-mono text-xs">
+            <div class="p-8 text-center text-stone-400 font-mono text-xs">
+              <span class="inline-block animate-spin mr-2">☯</span> Calculando participación sub-regional...
+            </div>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+
+    <!-- FILA INFERIOR: DESGLOSE DE EMPRESAS REALES QUE FUERON POSTOR ÚNICO EN LA REGIÓN SELECCIONADA -->
+    <section id="empresasBreakdownSection" class="comic-panel corner-bracket p-5">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between border-b border-washi-border dark:border-sumi-border pb-3.5 mb-4 gap-3">
+        <div>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-[10px] font-mono text-vermilion uppercase tracking-widest font-bold">DESGLOSE POR EMPRESA REAL (PUENTE_ACTOR_EMPRESA • PRORRATEO 1/N)</span>
+            <span id="badgeSelectedRegion" class="px-2 py-0.5 text-[10px] font-mono font-bold bg-vermilion text-white uppercase">
+              CARGANDO REGIÓN...
+            </span>
+            <button
+              id="btnShowAllRegionsEmpresas"
+              type="button"
+              onclick="selectRegion('all')"
+              class="hidden px-2 py-0.5 text-[10px] font-mono border border-washi-border dark:border-sumi-border hover:border-vermilion text-stone-600 dark:text-stone-300 transition"
+            >
+              Ver Todas las Regiones
+            </button>
+          </div>
+          <h2 class="font-cinzel text-lg font-bold text-sumi-black dark:text-stone-100 uppercase tracking-wide mt-1" id="titleBreakdownEmpresas">
+            Empresas Adjudicadas como Postor Único en la Región
+          </h2>
+          <p class="text-xs font-serif italic text-stone-600 dark:text-stone-400">
+            Haga clic en cualquier empresa para abrir su Perfil Forense (Pantalla 02) con el expediente filtrado. Los consorcios han sido desagregados en sus empresas integrantes reales (1/N).
+          </p>
+        </div>
+
+        <!-- Buscador rápido local dentro del desglose regional -->
+        <div class="flex items-center gap-2">
+          <div class="relative">
+            <input
+              id="filterEmpresaTableInput"
+              type="text"
+              placeholder="Filtrar empresa o RUC en esta región..."
+              oninput="filterBreakdownTable()"
+              class="pl-3 pr-7 py-1.5 text-xs font-mono bg-white dark:bg-sumi-deep border border-washi-border dark:border-sumi-border focus:border-vermilion focus:ring-1 focus:ring-vermilion outline-none w-64 text-sumi-black dark:text-stone-200"
+            >
+            <span class="absolute right-2 top-1.5 text-xs text-stone-400 pointer-events-none">🔍</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla Forense de Empresas Reales -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse font-mono text-xs">
+          <thead>
+            <tr class="border-b-2 border-washi-border dark:border-sumi-border bg-washi-surface/70 dark:bg-sumi-deep/80 text-[10px] uppercase text-stone-600 dark:text-stone-300">
+              <th class="py-2.5 px-3">#</th>
+              <th class="py-2.5 px-3">Empresa Real (RUC / Razón Social)</th>
+              <th class="py-2.5 px-3 text-center">Vía de Adjudicación PU</th>
+              <th class="py-2.5 px-3 text-center">Contratos Postor Único</th>
+              <th class="py-2.5 px-3">Dominancia Sin Rival (%)</th>
+              <th class="py-2.5 px-3 text-center">Entidades Compradoras</th>
+              <th class="py-2.5 px-3 text-right">Monto Adjudicado 1/N (S/)</th>
+              <th class="py-2.5 px-3 text-center">Expediente</th>
+            </tr>
+          </thead>
+          <tbody id="empresasPostorUnicoBody" class="divide-y divide-washi-border/60 dark:divide-sumi-border/60">
+            <tr>
+              <td colspan="8" class="p-8 text-center text-stone-400">
+                <span class="inline-block animate-spin mr-2">☯</span> Consultando empresas beneficiarias de postor único...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+  <!-- END: MainContent -->
+
+  <!-- BEGIN: MainFooter -->
+  <footer class="relative z-10 border-t border-washi-border dark:border-sumi-border bg-washi-base/95 dark:bg-sumi-ink/95 py-6 mt-12 transition-colors">
+    <div class="max-w-[1640px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-mono text-stone-600 dark:text-stone-400">
+      <div class="flex items-center gap-3">
+        <div class="w-6 h-6 octagon-frame bg-vermilion flex items-center justify-center text-white text-[10px] font-bold">武</div>
+        <div>
+          <span class="font-cinzel font-black text-sumi-black dark:text-stone-100">OECE / RONIN RADAR POSTOR ÚNICO</span>
+          <span class="mx-2">|</span>
+          <span>AUDITORÍA POR EMPRESA REAL (PRORRATEO EQUITATIVO 1/N)</span>
+        </div>
+      </div>
+      <div>CANON BUSHIDŌ: JUSTICIA (義) • RECTITUD (正) • INTEGRIDAD (誠)</div>
+    </div>
+  </footer>
+  <!-- END: MainFooter -->
+
+  <script src="/js/postor-unico/peru-map-paths.js"></script>
+  <script src="/js/postor-unico/app.js"></script>
+</body>
+</html>
+

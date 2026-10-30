@@ -84,10 +84,15 @@ export class CockpitService {
       ),
       metricas_contratos AS (
           SELECT 
-              COUNT(DISTINCT codigo_contrato, numero_item) AS total_contratos,
-              COALESCE(SUM(monto_contratado_item), 0.00) AS monto_total_soles,
-              COUNT(DISTINCT id_contratista) AS contratistas_activos
-          FROM contratos_filtrados
+              COUNT(DISTINCT cf.codigo_contrato, cf.numero_item) AS total_contratos,
+              COALESCE(SUM(cf.monto_contratado_item), 0.00) AS monto_total_soles,
+              (
+                  SELECT COUNT(DISTINCT pae.id_empresa_real)
+                  FROM contratos_filtrados cf2
+                  INNER JOIN puente_actor_empresa pae 
+                      ON cf2.id_contratista = pae.id_actor_original
+              ) AS contratistas_activos
+          FROM contratos_filtrados cf
       ),
       items_convocados AS (
           SELECT 
@@ -138,21 +143,16 @@ export class CockpitService {
 
     const SQL_TOP10_CANTIDAD = `
       SELECT 
-          org.numero_documento AS ruc,
-          org.razon_social AS proveedor,
-          COALESCE(
-              CASE 
-                  WHEN org.tipo_proveedor LIKE '%CONSORCIO%' 
-                    OR org.razon_social LIKE '%CONSORCIO%' THEN 'CONSORCIO'
-                  ELSE 'INDIVIDUAL'
-              END, 
-              'INDIVIDUAL'
-          ) AS tipo_proveedor,
+          emp.numero_documento AS ruc,
+          emp.razon_social AS proveedor,
+          'INDIVIDUAL' AS tipo_proveedor,
           COUNT(DISTINCT c.codigo_contrato, c.numero_item) AS total_contratos,
-          COALESCE(SUM(c.monto_contratado_item), 0.00) AS monto_total_soles
+          COALESCE(SUM(ROUND(c.monto_contratado_item * pae.factor_equitativo, 2)), 0.00) AS monto_total_soles
       FROM contratos c
-      INNER JOIN organizaciones org 
-          ON c.id_contratista = org.id_organizacion
+      INNER JOIN puente_actor_empresa pae 
+          ON c.id_contratista = pae.id_actor_original
+      INNER JOIN organizaciones emp 
+          ON pae.id_empresa_real = emp.id_organizacion
       INNER JOIN convocatorias conv 
           ON c.codigo_convocatoria = conv.codigo_convocatoria 
          AND c.numero_item = conv.numero_item
@@ -164,28 +164,23 @@ export class CockpitService {
         AND (? IS NULL OR conv.moneda = ?)
         AND (? IS NULL OR conv.tipo_proceso_seleccion = ?)
         AND (? IS NULL OR conv.estado_item = ?)
-      GROUP BY org.id_organizacion, org.numero_documento, org.razon_social, org.tipo_proveedor
+      GROUP BY emp.id_organizacion, emp.numero_documento, emp.razon_social
       ORDER BY total_contratos DESC, monto_total_soles DESC
       LIMIT 10;
     `;
 
     const SQL_TOP10_MONTO = `
       SELECT 
-          org.numero_documento AS ruc,
-          org.razon_social AS proveedor,
-          COALESCE(
-              CASE 
-                  WHEN org.tipo_proveedor LIKE '%CONSORCIO%' 
-                    OR org.razon_social LIKE '%CONSORCIO%' THEN 'CONSORCIO'
-                  ELSE 'INDIVIDUAL'
-              END, 
-              'INDIVIDUAL'
-          ) AS tipo_proveedor,
-          COALESCE(SUM(c.monto_contratado_item), 0.00) AS monto_total_soles,
+          emp.numero_documento AS ruc,
+          emp.razon_social AS proveedor,
+          'INDIVIDUAL' AS tipo_proveedor,
+          COALESCE(SUM(ROUND(c.monto_contratado_item * pae.factor_equitativo, 2)), 0.00) AS monto_total_soles,
           COUNT(DISTINCT c.codigo_contrato, c.numero_item) AS total_contratos
       FROM contratos c
-      INNER JOIN organizaciones org 
-          ON c.id_contratista = org.id_organizacion
+      INNER JOIN puente_actor_empresa pae 
+          ON c.id_contratista = pae.id_actor_original
+      INNER JOIN organizaciones emp 
+          ON pae.id_empresa_real = emp.id_organizacion
       INNER JOIN convocatorias conv 
           ON c.codigo_convocatoria = conv.codigo_convocatoria 
          AND c.numero_item = conv.numero_item
@@ -197,7 +192,7 @@ export class CockpitService {
         AND (? IS NULL OR conv.moneda = ?)
         AND (? IS NULL OR conv.tipo_proceso_seleccion = ?)
         AND (? IS NULL OR conv.estado_item = ?)
-      GROUP BY org.id_organizacion, org.numero_documento, org.razon_social, org.tipo_proveedor
+      GROUP BY emp.id_organizacion, emp.numero_documento, emp.razon_social
       ORDER BY monto_total_soles DESC, total_contratos DESC
       LIMIT 10;
     `;
@@ -213,13 +208,13 @@ export class CockpitService {
               ON c.codigo_convocatoria = conv.codigo_convocatoria 
              AND c.numero_item = conv.numero_item
           WHERE YEAR(c.fecha_suscripcion_contrato) = ?
-            AND (? IS NULL OR MONTH(c.fecha_suscripcion_contrato) = ?)
-            AND (? IS NULL OR conv.departamento_item = ?)
-            AND (? IS NULL OR conv.provincia_item = ?)
-            AND (? IS NULL OR conv.distrito_item = ?)
-            AND (? IS NULL OR conv.moneda = ?)
-            AND (? IS NULL OR conv.tipo_proceso_seleccion = ?)
-            AND (? IS NULL OR conv.estado_item = ?)
+             AND (? IS NULL OR MONTH(c.fecha_suscripcion_contrato) = ?)
+             AND (? IS NULL OR conv.departamento_item = ?)
+             AND (? IS NULL OR conv.provincia_item = ?)
+             AND (? IS NULL OR conv.distrito_item = ?)
+             AND (? IS NULL OR conv.moneda = ?)
+             AND (? IS NULL OR conv.tipo_proceso_seleccion = ?)
+             AND (? IS NULL OR conv.estado_item = ?)
           GROUP BY conv.tipo_proceso_seleccion
       )
       SELECT 
@@ -234,27 +229,88 @@ export class CockpitService {
       ORDER BY monto_total_soles DESC;
     `;
 
-    const SQL_TOP10_ENTIDADES = `
+    // Granularidad geográfica adaptativa (Drill-down automático: Departamento -> Provincia -> Distrito)
+    const geoColumn = provincia
+      ? 'conv.distrito_item'
+      : departamento
+        ? 'conv.provincia_item'
+        : 'conv.departamento_item';
+
+    const nivelGeografico = provincia
+      ? 'DISTRITO'
+      : departamento
+        ? 'PROVINCIA'
+        : 'DEPARTAMENTO';
+
+    const SQL_METRICAS_REGIONALES = `
+      WITH contratos_region AS (
+          SELECT 
+              COALESCE(NULLIF(TRIM(${geoColumn}), ''), 'NO ESPECIFICADO') AS region,
+              c.codigo_contrato,
+              c.numero_item,
+              c.codigo_convocatoria,
+              c.monto_contratado_item
+          FROM contratos c
+          INNER JOIN convocatorias conv 
+              ON c.codigo_convocatoria = conv.codigo_convocatoria 
+             AND c.numero_item = conv.numero_item
+          WHERE YEAR(c.fecha_suscripcion_contrato) = ?
+            AND (? IS NULL OR MONTH(c.fecha_suscripcion_contrato) = ?)
+            AND (? IS NULL OR conv.departamento_item = ?)
+            AND (? IS NULL OR conv.provincia_item = ?)
+            AND (? IS NULL OR conv.distrito_item = ?)
+            AND (? IS NULL OR conv.moneda = ?)
+            AND (? IS NULL OR conv.tipo_proceso_seleccion = ?)
+            AND (? IS NULL OR conv.estado_item = ?)
+      ),
+      items_unicos_region AS (
+          SELECT DISTINCT
+              region,
+              codigo_convocatoria,
+              numero_item
+          FROM contratos_region
+      ),
+      postores_por_item_region AS (
+          SELECT 
+              iur.region,
+              iur.codigo_convocatoria,
+              iur.numero_item,
+              COUNT(DISTINCT o.id_postor) AS cant_postores
+          FROM items_unicos_region iur
+          LEFT JOIN ofertantes o 
+              ON iur.codigo_convocatoria = o.codigo_convocatoria 
+             AND iur.numero_item = o.numero_item
+          GROUP BY iur.region, iur.codigo_convocatoria, iur.numero_item
+      ),
+      metricas_participantes AS (
+          SELECT 
+              region,
+              ROUND(COALESCE(AVG(NULLIF(cant_postores, 0)), 1.00), 2) AS promedio_participantes,
+              SUM(CASE WHEN cant_postores = 1 THEN 1 ELSE 0 END) AS items_postor_unico
+          FROM postores_por_item_region
+          GROUP BY region
+      ),
+      metricas_contratos AS (
+          SELECT 
+              region,
+              COUNT(DISTINCT codigo_contrato, numero_item) AS total_contratos,
+              COALESCE(SUM(monto_contratado_item), 0.00) AS monto_total_soles
+          FROM contratos_region
+          GROUP BY region
+      )
       SELECT 
-          conv.ruc_entidad,
-          COALESCE(MAX(conv.nombre_entidad), conv.ruc_entidad) AS nombre_entidad,
-          COUNT(DISTINCT c.codigo_contrato, c.numero_item) AS total_contratos,
-          COALESCE(SUM(c.monto_contratado_item), 0.00) AS monto_total_soles
-      FROM contratos c
-      INNER JOIN convocatorias conv 
-          ON c.codigo_convocatoria = conv.codigo_convocatoria 
-         AND c.numero_item = conv.numero_item
-      WHERE YEAR(c.fecha_suscripcion_contrato) = ?
-        AND (? IS NULL OR MONTH(c.fecha_suscripcion_contrato) = ?)
-        AND (? IS NULL OR conv.departamento_item = ?)
-        AND (? IS NULL OR conv.provincia_item = ?)
-        AND (? IS NULL OR conv.distrito_item = ?)
-        AND (? IS NULL OR conv.moneda = ?)
-        AND (? IS NULL OR conv.tipo_proceso_seleccion = ?)
-        AND (? IS NULL OR conv.estado_item = ?)
-      GROUP BY conv.ruc_entidad
-      ORDER BY monto_total_soles DESC, total_contratos DESC
-      LIMIT 10;
+          mc.region,
+          mc.total_contratos,
+          mc.monto_total_soles,
+          ROUND(
+              (mc.total_contratos * 100.0) / NULLIF(SUM(mc.total_contratos) OVER(), 0), 
+              2
+          ) AS porcentaje_contratos,
+          COALESCE(mp.promedio_participantes, 1.00) AS promedio_participantes,
+          COALESCE(mp.items_postor_unico, 0) AS items_postor_unico
+      FROM metricas_contratos mc
+      LEFT JOIN metricas_participantes mp ON mc.region = mp.region
+      ORDER BY mc.total_contratos DESC, mc.monto_total_soles DESC;
     `;
 
     try {
@@ -263,13 +319,13 @@ export class CockpitService {
         topCantidadRows,
         topMontoRows,
         distribucionRows,
-        topEntidadesRows
+        regionalesRows
       ] = await Promise.all([
         this.db.query<any>(SQL_KPIS, [...baseParams, ...itemsConvocadosParams]),
         this.db.query<any>(SQL_TOP10_CANTIDAD, baseParams),
         this.db.query<any>(SQL_TOP10_MONTO, baseParams),
         this.db.query<any>(SQL_DISTRIBUCION_PROCESOS, baseParams),
-        this.db.query<any>(SQL_TOP10_ENTIDADES, baseParams)
+        this.db.query<any>(SQL_METRICAS_REGIONALES, baseParams)
       ]);
 
       const kpi = kpiRows[0] || {
@@ -285,6 +341,7 @@ export class CockpitService {
         success: true,
         data: {
           year,
+          nivel_geografico: nivelGeografico,
           kpis: {
             total_contratos: Number(kpi.total_contratos || 0),
             monto_total_soles: monto,
@@ -312,11 +369,13 @@ export class CockpitService {
             monto_total_soles: Number(r.monto_total_soles),
             porcentaje: Number(r.porcentaje || 0)
           })),
-          top_entidades_presupuesto: topEntidadesRows.map(r => ({
-            ruc_entidad: r.ruc_entidad,
-            nombre_entidad: r.nombre_entidad,
+          metricas_regionales: regionalesRows.map(r => ({
+            region: r.region,
             total_contratos: Number(r.total_contratos),
-            monto_total_soles: Number(r.monto_total_soles)
+            monto_total_soles: Number(r.monto_total_soles),
+            porcentaje_contratos: Number(r.porcentaje_contratos || 0),
+            promedio_participantes: Number(r.promedio_participantes || 1),
+            items_postor_unico: Number(r.items_postor_unico || 0)
           }))
         }
       };
@@ -327,6 +386,7 @@ export class CockpitService {
         error: error.message,
         data: {
           year,
+          nivel_geografico: nivelGeografico,
           kpis: {
             total_contratos: 0,
             monto_total_soles: 0,
@@ -337,7 +397,7 @@ export class CockpitService {
           top_contratistas_cantidad: [],
           top_contratistas_monto: [],
           distribucion_tipo_proceso: [],
-          top_entidades_presupuesto: []
+          metricas_regionales: []
         }
       };
     }

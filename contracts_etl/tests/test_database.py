@@ -27,3 +27,7 @@ def test_tables_exist():
     assert "contratos" in tables
     assert tables["contratos"] is True
 
+    assert "stg_consorcios_raw" in tables
+    assert tables["stg_consorcios_raw"] is True
+
+

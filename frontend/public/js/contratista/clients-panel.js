@@ -4,6 +4,16 @@
  */
 
 export const ClientsPanelComponent = {
+  renderLoading(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = `
+      <div class="p-8 text-center text-stone-400 font-mono text-xs">
+        <span class="inline-block animate-spin mr-2">☯</span> Analizando entidades compradoras...
+      </div>
+    `;
+  },
+
   render(containerId, items) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -11,7 +21,11 @@ export const ClientsPanelComponent = {
     if (!items || items.length === 0) {
       container.innerHTML = `
         <div class="p-8 text-center text-stone-400 font-mono text-xs">
-          Sin clientes institucionales registrados en este periodo.
+          <div class="text-xl mb-1">🏛️</div>
+          <div>Sin clientes institucionales formalizados en este periodo.</div>
+          <div class="mt-2 text-[10px] text-stone-500 font-serif italic">
+            El contratista no registra adjudicaciones con compradores públicos en este año.
+          </div>
         </div>
       `;
       return;

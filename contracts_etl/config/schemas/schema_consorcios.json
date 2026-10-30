@@ -1,0 +1,115 @@
+{
+  "table_name": "stg_consorcios_raw",
+  "primary_key": ["codigo_consorcio", "ruc_miembro"],
+  "foreign_keys": [],
+  "columns": [
+    {
+      "excel_column": "ruc_consorcio",
+      "excel_aliases": [
+        "ruc_consorcio",
+        "codigo_consorcio",
+        "cod_consorcio",
+        "ruc_codigo_consorcio",
+        "rucconsorcio",
+        "codigoconsorcio",
+        "ruc_proveedor",
+        "codigo_postor"
+      ],
+      "sql_column": "codigo_consorcio",
+      "sql_type": "VARCHAR(20)",
+      "python_type": "str",
+      "nullable": false
+    },
+    {
+      "excel_column": "consorcio",
+      "excel_aliases": [
+        "consorcio",
+        "nombre_consorcio",
+        "razon_social_consorcio",
+        "nombreconsorcio",
+        "proveedor",
+        "postor"
+      ],
+      "sql_column": "nombre_consorcio",
+      "sql_type": "VARCHAR(255)",
+      "python_type": "str",
+      "nullable": true
+    },
+    {
+      "excel_column": "ruc_miembro",
+      "excel_aliases": [
+        "ruc_miembro",
+        "ruc_integrante",
+        "ruc_consorciado",
+        "numero_documento_miembro",
+        "num_doc_miembro",
+        "rucmiembro",
+        "rucintegrante",
+        "codigo_integrante",
+        "ruc_socio"
+      ],
+      "sql_column": "ruc_miembro",
+      "sql_type": "VARCHAR(20)",
+      "python_type": "str",
+      "nullable": false
+    },
+    {
+      "excel_column": "nombre_miembro",
+      "excel_aliases": [
+        "nombre_miembro",
+        "miembro",
+        "integrante",
+        "nombre_integrante",
+        "razon_social_miembro",
+        "razon_social_integrante",
+        "consorciado",
+        "nombremiembro",
+        "socio"
+      ],
+      "sql_column": "nombre_miembro",
+      "sql_type": "VARCHAR(255)",
+      "python_type": "str",
+      "nullable": false
+    },
+    {
+      "excel_column": "codigoconvocatoria",
+      "excel_aliases": [
+        "codigoconvocatoria",
+        "codigo_convocatoria",
+        "cod_convocatoria"
+      ],
+      "sql_column": "codigo_convocatoria",
+      "sql_type": "VARCHAR(20)",
+      "python_type": "str",
+      "nullable": true
+    },
+    {
+      "excel_column": "n_item",
+      "excel_aliases": [
+        "n_item",
+        "num_item",
+        "numero_item",
+        "item"
+      ],
+      "sql_column": "numero_item",
+      "sql_type": "INT",
+      "python_type": "int",
+      "nullable": true
+    },
+    {
+      "excel_column": "porcentaje_participacion",
+      "excel_aliases": [
+        "porcentaje_participacion",
+        "participacion",
+        "pct_participacion",
+        "porcentaje",
+        "porcentaje_obligacion"
+      ],
+      "sql_column": "porcentaje_declarado",
+      "sql_type": "DECIMAL(6,2)",
+      "python_type": "float",
+      "nullable": true
+    }
+  ]
+}
+

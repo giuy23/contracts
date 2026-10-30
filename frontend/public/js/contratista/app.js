@@ -15,7 +15,7 @@ import { SearchBarComponent } from './search-bar.js';
 
 class ContratistaApp {
   constructor() {
-    this.isFetching = false;
+    this.activeRequestId = 0;
   }
 
   init() {
@@ -26,11 +26,18 @@ class ContratistaApp {
     SearchBarComponent.init();
 
     // Suscripciones reactivas del estado
-    state.subscribe('rucChanged', () => this.loadAllData());
-    state.subscribe('yearChanged', () => this.loadAllData());
+    state.subscribe('rucChanged', () => {
+      this.updateNavigationLinks();
+      this.loadAllData();
+    });
+    state.subscribe('yearChanged', () => {
+      this.updateNavigationLinks();
+      this.loadAllData();
+    });
     state.subscribe('pageChanged', () => this.loadContratosOnly());
 
     // Carga inicial
+    this.updateNavigationLinks();
     this.loadAllData();
   }
 
@@ -44,12 +51,16 @@ class ContratistaApp {
       });
     }
 
-    // Botón de Descarga Excel
+    // Botón de Descarga Excel Forense con comprobación de datos
     const btnExport = document.getElementById('btnExportExcel');
     if (btnExport) {
       btnExport.addEventListener('click', () => {
         if (!state.ruc) {
           alert('Por favor seleccione una empresa para exportar.');
+          return;
+        }
+        if (!state.summaryData || Number(state.summaryData.total_contratos || 0) === 0) {
+          alert(`El contratista ${state.ruc} no registra contratos formalizados en el periodo seleccionado (${state.year === 'all' ? 'Histórico' : state.year}).`);
           return;
         }
         window.location.href = ContratistaApiService.getExcelDownloadUrl(state.ruc, state.year);
@@ -79,10 +90,7 @@ class ContratistaApp {
     };
 
     window.selectSearchedCompany = (ruc, razonSocial) => {
-      const input = document.getElementById('searchContratistaInput');
-      if (input) input.value = `${ruc} - ${razonSocial}`;
-      SearchBarComponent.hideDropdown();
-      state.setRuc(ruc);
+      SearchBarComponent.selectCompany(ruc, razonSocial);
     };
 
     window.togglePostoresRow = (convocatoria, item) => {
@@ -91,11 +99,44 @@ class ContratistaApp {
   }
 
   /**
-   * Carga paralela de todas las dimensiones forenses de la empresa
+   * Sincroniza dinámicamente los enlaces de navegación de la cabecera para preservar
+   * el filtro de año fiscal al volver a la pantalla principal (index.html) o al Radar de Postor Único
+   */
+  updateNavigationLinks() {
+    const returnYear = state.year === 'all' ? '2026' : state.year;
+    const returnUrl = `/index.html?year=${encodeURIComponent(returnYear)}`;
+    const postorUnicoUrl = `/postor-unico.html?year=${encodeURIComponent(state.year)}`;
+
+    ['headerLogoLink', 'headerBrandLink', 'navTabGeneralLink', 'btnVolverGeneral'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.setAttribute('href', returnUrl);
+    });
+
+    const navTabContratista = document.getElementById('navTabContratistaLink');
+    if (navTabContratista) {
+      navTabContratista.setAttribute('href', `/contratista.html?ruc=${encodeURIComponent(state.ruc)}&year=${encodeURIComponent(state.year)}`);
+    }
+
+    const navTabPostorUnico = document.getElementById('navTabPostorUnicoLink');
+    if (navTabPostorUnico) {
+      navTabPostorUnico.setAttribute('href', postorUnicoUrl);
+    }
+
+    const btnVolverPostorUnico = document.getElementById('btnVolverPostorUnico');
+    if (btnVolverPostorUnico) {
+      btnVolverPostorUnico.setAttribute('href', postorUnicoUrl);
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('from') === 'postor-unico') {
+        btnVolverPostorUnico.classList.remove('hidden');
+      }
+    }
+  }
+
+  /**
+   * Carga paralela de todas las dimensiones forenses de la empresa sin carreras
    */
   async loadAllData() {
-    if (this.isFetching) return;
-    this.isFetching = true;
+    const reqId = ++this.activeRequestId;
 
     // Sincronizar el select visual de año con el estado actual
     const selectYear = document.getElementById('selectYearFilter');
@@ -103,8 +144,14 @@ class ContratistaApp {
       selectYear.value = state.year;
     }
 
+    // Renderizar estados de carga en los 6 paneles inmediatamente
     KpiSidebarComponent.renderLoading();
+    DonutChartComponent.renderLoading('donutChartContainer');
+    TimelineEventsComponent.renderLoading('timelineEventsContainer');
+    ClientsPanelComponent.renderLoading('clientesContainer');
+    RivalsPanelComponent.renderLoading('competidoresContainer');
     ContractsTableComponent.renderLoading();
+    this.hideAlertBanner();
 
     try {
       const [summary, clientes, territorio, timeline, competidores, contratos] = await Promise.all([
@@ -116,8 +163,25 @@ class ContratistaApp {
         ContratistaApiService.getContratos(state.ruc, state.year, state.pageSize, 0).catch(e => { console.error(e); return []; })
       ]);
 
+      // Si llegó otra petición posterior, descartar esta respuesta obsoleta
+      if (reqId !== this.activeRequestId) return;
+
       state.setSummaryData(summary);
-      KpiSidebarComponent.render(summary, state.year);
+
+      if (!summary) {
+        // Caso: Empresa no existe en la BD
+        KpiSidebarComponent.renderNotFound(state.ruc, state.year);
+        this.renderNotFoundBanner(state.ruc);
+      } else {
+        // Caso normal o empresa con 0 contratos en el año
+        KpiSidebarComponent.render(summary, state.year);
+        this.syncSearchInputValue(summary);
+
+        if (summary.total_contratos === 0) {
+          this.renderEmptyContractsBanner(summary, timeline);
+        }
+      }
+
       DonutChartComponent.render('donutChartContainer', territorio);
       TimelineEventsComponent.render('timelineEventsContainer', timeline);
       ClientsPanelComponent.render('clientesContainer', clientes);
@@ -126,9 +190,82 @@ class ContratistaApp {
 
     } catch (err) {
       console.error('Error general al cargar expediente forense:', err);
-    } finally {
-      this.isFetching = false;
     }
+  }
+
+  syncSearchInputValue(summary) {
+    const input = document.getElementById('searchContratistaInput');
+    if (input && document.activeElement !== input && summary) {
+      input.value = `${summary.ruc} - ${summary.razon_social}`;
+    }
+  }
+
+  renderNotFoundBanner(ruc) {
+    const banner = document.getElementById('contratistaAlertBanner');
+    if (!banner) return;
+    banner.className = 'comic-panel corner-bracket p-4 border-l-4 border-l-vermilion bg-vermilion/5 mb-6';
+    banner.innerHTML = `
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono">
+        <div>
+          <span class="font-bold text-vermilion text-sm block">⚠️ RUC NO ENCONTRADO EN PADRÓN SEACE</span>
+          <p class="text-stone-600 dark:text-stone-300 mt-0.5">
+            El número de RUC <strong>${ruc}</strong> no registra inscripción formal como organización proveedora o contratista en el sistema.
+          </p>
+        </div>
+        <button 
+          onclick="window.selectSearchedCompany('20100041953', 'RIMAC SEGUROS Y REASEGUROS')" 
+          class="px-3 py-1.5 bg-vermilion text-white font-cinzel text-xs font-bold whitespace-nowrap hover:bg-vermilion-dark transition"
+        >
+          Cargar Empresa Demo (Rimac)
+        </button>
+      </div>
+    `;
+    banner.classList.remove('hidden');
+  }
+
+  renderEmptyContractsBanner(summary, timeline) {
+    const banner = document.getElementById('contratistaAlertBanner');
+    if (!banner) return;
+
+    const yearsWithContracts = (timeline || []).filter(t => t.total_contratos > 0);
+    const lastActiveYear = yearsWithContracts.length > 0 ? yearsWithContracts[yearsWithContracts.length - 1].year : null;
+
+    banner.className = 'comic-panel corner-bracket p-4 border-l-4 border-l-gold-crest bg-gold-crest/5 mb-6';
+    banner.innerHTML = `
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono">
+        <div>
+          <span class="font-bold text-sumi-black dark:text-stone-100 text-sm block">
+            ⚖️ SIN CONTRATOS REGISTRADOS EN ${state.year === 'all' ? 'TODO EL HISTÓRICO' : `EL EJERCICIO FISCAL ${state.year}`}
+          </span>
+          <p class="text-stone-600 dark:text-stone-300 mt-0.5">
+            La empresa <strong>${summary.razon_social}</strong> (RUC ${summary.ruc}) no formalizó contratos en este periodo.
+            ${lastActiveYear ? `Se registran contratos en el ejercicio <strong>${lastActiveYear}</strong>.` : ''}
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          ${lastActiveYear ? `
+            <button 
+              onclick="window.selectFiscalYear('${lastActiveYear}')" 
+              class="px-3 py-1.5 bg-vermilion text-white font-cinzel text-xs font-bold hover:bg-vermilion-dark transition whitespace-nowrap"
+            >
+              Ir al año ${lastActiveYear} ↗
+            </button>
+          ` : ''}
+          <button 
+            onclick="window.selectFiscalYear('all')" 
+            class="px-3 py-1.5 border border-washi-border dark:border-sumi-border bg-white dark:bg-sumi-deep hover:border-vermilion text-sumi-black dark:text-stone-200 font-cinzel text-xs font-bold transition whitespace-nowrap"
+          >
+            Ver Todo el Histórico (2022-2026)
+          </button>
+        </div>
+      </div>
+    `;
+    banner.classList.remove('hidden');
+  }
+
+  hideAlertBanner() {
+    const banner = document.getElementById('contratistaAlertBanner');
+    if (banner) banner.classList.add('hidden');
   }
 
   /**
@@ -146,7 +283,7 @@ class ContratistaApp {
   }
 
   /**
-   * Inicialización del Tema Sumi / Washi
+   * Inicialización del Tema Sumi / Washi con sincronización a localStorage
    */
   initTheme() {
     const currentTheme = localStorage.getItem('theme') || 'dark';
@@ -214,4 +351,3 @@ document.addEventListener('DOMContentLoaded', () => {
   const app = new ContratistaApp();
   app.init();
 });
-

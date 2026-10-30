@@ -48,11 +48,11 @@ export class CockpitController {
   }
 
   /**
-   * Endpoint de Top Entidades Compradoras (compatibilidad)
+   * Endpoint de Métricas Regionales (Contratos y Promedio de Participantes por Región)
    */
-  @Get('top-entidades')
-  async getTopEntidades(@Query() query: CockpitQueryParams) {
+  @Get('metricas-regionales')
+  async getMetricasRegionales(@Query() query: CockpitQueryParams) {
     const res = await this.cockpitService.getCockpitData(query);
-    return res.data?.top_entidades_presupuesto || [];
+    return res.data?.metricas_regionales || [];
   }
 }

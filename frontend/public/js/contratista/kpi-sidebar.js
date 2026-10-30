@@ -6,7 +6,21 @@
 export const KpiSidebarComponent = {
   renderLoading() {
     const lblRazonSocial = document.getElementById('lblRazonSocial');
-    if (lblRazonSocial) lblRazonSocial.textContent = 'Consultando expediente forense...';
+    if (lblRazonSocial) {
+      lblRazonSocial.innerHTML = '<span class="inline-block animate-pulse text-vermilion">Consultando expediente forense SEACE...</span>';
+    }
+
+    const skeletonEl = (id) => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = '<span class="inline-block animate-pulse text-stone-400">---</span>';
+    };
+
+    skeletonEl('kpiTotalContratos');
+    skeletonEl('kpiMontoTotal');
+    skeletonEl('kpiMontoSub');
+    skeletonEl('kpiEntidades');
+    skeletonEl('kpiPostorUnico');
+    skeletonEl('kpiWinRate');
   },
 
   render(data, currentYear) {
@@ -37,7 +51,7 @@ export const KpiSidebarComponent = {
     if (lblPeriodo) {
       lblPeriodo.textContent = currentYear === 'all'
         ? 'Histórico Completo (2022 - 2026)'
-        : `${currentYear}`;
+        : `Ejercicio Fiscal ${currentYear}`;
     }
 
     // 2. Tarjetas KPI Verticales
@@ -76,7 +90,17 @@ export const KpiSidebarComponent = {
     if (elPostor) elPostor.textContent = `${tasaPostor.toFixed(1)}%`;
     if (barPostor) barPostor.style.width = `${Math.min(tasaPostor, 100)}%`;
 
-    if (tasaPostor >= 40) {
+    if (totalContratos === 0) {
+      if (cardPostor) cardPostor.className = "comic-panel p-3.5 border-l-4 border-l-stone-300 dark:border-l-stone-700 transition-all";
+      if (badgePostorAlert) {
+        badgePostorAlert.textContent = 'SIN CONTRATOS';
+        badgePostorAlert.className = 'text-[9px] font-mono px-1.5 py-0.5 bg-stone-200 dark:bg-stone-700 text-stone-500 font-semibold';
+      }
+      if (elPostorDesc) {
+        elPostorDesc.textContent = 'Sin adjudicaciones en el periodo';
+        elPostorDesc.className = 'text-[10px] font-serif text-stone-400 italic';
+      }
+    } else if (tasaPostor >= 40) {
       if (cardPostor) {
         cardPostor.className = "comic-panel p-3.5 border-l-4 border-l-vermilion bg-vermilion/5 transition-all shadow-sm";
       }
@@ -114,14 +138,34 @@ export const KpiSidebarComponent = {
     }
   },
 
-  renderNotFound() {
+  renderNotFound(ruc, currentYear) {
     const lblRazonSocial = document.getElementById('lblRazonSocial');
-    if (lblRazonSocial) lblRazonSocial.textContent = 'EMPRESA NO REGISTRADA O SIN CONTRATOS EN ESTE PERIODO';
+    if (lblRazonSocial) {
+      lblRazonSocial.textContent = 'RUC NO REGISTRADO EN EL PADRÓN SEACE';
+    }
+
+    const lblRuc = document.getElementById('lblRuc');
+    if (lblRuc) lblRuc.textContent = ruc || '--';
+
+    const lblSede = document.getElementById('lblSede');
+    if (lblSede) lblSede.textContent = 'NO REGISTRADO';
+
+    const lblPeriodo = document.getElementById('lblPeriodoAuditoria');
+    if (lblPeriodo) lblPeriodo.textContent = currentYear === 'all' ? 'Histórico Completo' : currentYear;
+
+    const badgeTipo = document.getElementById('badgeTipoProveedor');
+    if (badgeTipo) {
+      badgeTipo.textContent = 'DESCONOCIDO';
+      badgeTipo.className = 'px-2 py-0.5 text-[9px] font-mono font-bold bg-stone-200 dark:bg-stone-700 text-stone-500';
+    }
+
     document.getElementById('kpiTotalContratos').textContent = '0';
     document.getElementById('kpiMontoTotal').textContent = 'S/ 0.00';
     document.getElementById('kpiMontoSub').textContent = 'S/ 0.00';
     document.getElementById('kpiEntidades').textContent = '0';
     document.getElementById('kpiPostorUnico').textContent = '0.0%';
+    document.getElementById('barPostorUnico').style.width = '0%';
     document.getElementById('kpiWinRate').textContent = '0.0%';
+    document.getElementById('barWinRate').style.width = '0%';
   }
 };

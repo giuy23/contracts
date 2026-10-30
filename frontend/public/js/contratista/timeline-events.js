@@ -6,6 +6,16 @@
 import { state } from './state.js';
 
 export const TimelineEventsComponent = {
+  renderLoading(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = `
+      <div class="p-8 text-center text-stone-400 font-mono text-xs">
+        <span class="inline-block animate-spin mr-2">☯</span> Reconstruyendo línea de tiempo multianual (2022 - 2026)...
+      </div>
+    `;
+  },
+
   render(containerId, items) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -13,7 +23,8 @@ export const TimelineEventsComponent = {
     if (!items || items.length === 0) {
       container.innerHTML = `
         <div class="p-8 text-center text-stone-400 font-mono text-xs">
-          Sin evolución histórica registrada para esta empresa.
+          <div class="text-xl mb-1">⏳</div>
+          <div>Sin hitos contractuales registrados para esta empresa entre 2022 y 2026.</div>
         </div>
       `;
       return;
@@ -111,4 +122,3 @@ export const TimelineEventsComponent = {
     `;
   }
 };
-

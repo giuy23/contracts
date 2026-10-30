@@ -33,6 +33,19 @@ def _normalize_string(val: Any) -> Optional[str]:
     return s
 
 
+def _normalize_doc_code(val: Any) -> Optional[str]:
+    """
+    Normaliza códigos de documento (RUC o código de consorcio),
+    eliminando '.0' de lecturas flotantes de Excel y espacios.
+    """
+    s = _normalize_string(val)
+    if s is None:
+        return None
+    if s.endswith(".0"):
+        s = s[:-2]
+    return s.strip()
+
+
 def _normalize_int(val: Any) -> Optional[int]:
     """
     Convierte un valor a entero manejando strings con decimales o comas.
@@ -121,11 +134,17 @@ def clean_and_transform(
 
     for col_def in columns_config:
         excel_col_name = col_def["excel_column"]
+        aliases = col_def.get("excel_aliases", [excel_col_name])
         sql_col_name = col_def["sql_column"]
         python_type = col_def.get("python_type", "str")
 
-        # Buscar coincidencia en el Excel
+        # Buscar coincidencia en el Excel por columna principal o alias
         matched_key = excel_cols_map.get(excel_col_name.lower())
+        if matched_key is None:
+            for alias in aliases:
+                if alias.lower() in excel_cols_map:
+                    matched_key = excel_cols_map[alias.lower()]
+                    break
 
         if matched_key is not None:
             raw_series = df[matched_key]
@@ -142,6 +161,8 @@ def clean_and_transform(
             transformed_data[sql_col_name] = [_normalize_date(v) for v in raw_series]
         elif python_type == "datetime":
             transformed_data[sql_col_name] = [_normalize_datetime(v) for v in raw_series]
+        elif sql_col_name.startswith("ruc_") or sql_col_name.startswith("codigo_"):
+            transformed_data[sql_col_name] = [_normalize_doc_code(v) for v in raw_series]
         else:  # str por defecto
             transformed_data[sql_col_name] = [_normalize_string(v) for v in raw_series]
 
@@ -159,14 +180,17 @@ def clean_and_transform(
         reasons = []
 
         # 1. Validar Primary Keys
-        missing_pk = [pk for pk in primary_key_cols if row.get(pk) is None]
+        missing_pk = [
+            pk for pk in primary_key_cols
+            if row.get(pk) is None or pd.isna(row.get(pk))
+        ]
         if missing_pk:
             reasons.append(f"PK_NULA: [{', '.join(missing_pk)}]")
 
         # 2. Validar campos NOT NULL
         missing_required = [
             col for col in not_nullable_cols
-            if col not in missing_pk and row.get(col) is None
+            if col not in missing_pk and (row.get(col) is None or pd.isna(row.get(col)))
         ]
         if missing_required:
             reasons.append(f"REQUERIDO_NULO: [{', '.join(missing_required)}]")

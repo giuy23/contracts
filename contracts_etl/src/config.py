@@ -49,12 +49,13 @@ DATABASE_URL = os.getenv("DATABASE_URL", DEFAULT_DATABASE_URL)
 # Tamaño de bloque de procesamiento
 CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "3000"))
 
-# Orden estricto de precedencia relacional (Convocatorias -> Ofertantes -> Adjudicaciones -> Contratos)
+# Orden estricto de precedencia relacional (Convocatorias -> Ofertantes -> Adjudicaciones -> Contratos -> Consorcios)
 MODULE_ORDER: List[str] = [
     "01_convocatorias",
     "02_ofertantes",
     "03_adjudicaciones",
-    "04_contratos"
+    "04_contratos",
+    "05_consorcios"
 ]
 
 # Mapeo de módulos a sus esquemas y tablas
@@ -78,6 +79,11 @@ MODULE_CONFIG: Dict[str, Dict[str, str]] = {
         "table_name": "contratos",
         "schema_file": "schema_contratos.json",
         "ddl_file": "04_create_contratos.sql"
+    },
+    "05_consorcios": {
+        "table_name": "stg_consorcios_raw",
+        "schema_file": "schema_consorcios.json",
+        "ddl_file": "05_create_consorcios.sql"
     }
 }
 

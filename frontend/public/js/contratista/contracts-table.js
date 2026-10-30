@@ -30,23 +30,52 @@ export const ContractsTableComponent = {
     if (!tbody) return;
 
     const offset = state.page * state.pageSize;
+    const hasRows = contratos && contratos.length > 0;
 
     if (countLabel && state.summaryData) {
       countLabel.textContent = `Total Registrados: ${state.summaryData.total_contratos || 0} contratos`;
     }
 
     if (paginationInfo) {
-      paginationInfo.textContent = `Página ${state.page + 1} (${offset + 1} - ${offset + (contratos?.length || 0)})`;
+      paginationInfo.textContent = hasRows 
+        ? `Página ${state.page + 1} (${offset + 1} - ${offset + contratos.length})`
+        : `Sin registros (0 - 0)`;
     }
 
     if (btnPrev) btnPrev.disabled = state.page === 0;
-    if (btnNext) btnNext.disabled = !contratos || contratos.length < state.pageSize;
+    if (btnNext) btnNext.disabled = !hasRows || contratos.length < state.pageSize;
 
-    if (!contratos || contratos.length === 0) {
+    // Sincronizar estado del botón de exportación Excel
+    const btnExport = document.getElementById('btnExportExcel');
+    if (btnExport) {
+      const canExport = Boolean(state.summaryData && Number(state.summaryData.total_contratos || 0) > 0);
+      btnExport.disabled = !canExport;
+      if (!canExport) {
+        btnExport.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        btnExport.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    }
+
+    if (!hasRows) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="9" class="p-8 text-center text-stone-400 font-mono text-xs">
-            No se encontraron contratos registrados para esta empresa en el periodo seleccionado.
+          <td colspan="9" class="p-10 text-center font-mono text-xs">
+            <div class="text-2xl mb-2 text-stone-400">📜</div>
+            <div class="font-bold text-sumi-black dark:text-stone-200">
+              No se encontraron contratos registrados para esta empresa en el periodo seleccionado.
+            </div>
+            <p class="text-[11px] font-serif text-stone-500 dark:text-stone-400 mt-1">
+              Es posible que este contratista haya formalizado adjudicaciones en otros años fiscales.
+            </p>
+            <div class="mt-4 flex items-center justify-center gap-3">
+              <button 
+                onclick="window.selectFiscalYear('all')" 
+                class="px-3 py-1.5 bg-vermilion hover:bg-vermilion-dark text-white font-cinzel font-bold text-xs tracking-wider transition shadow-sm"
+              >
+                ✦ Ver Todo el Histórico (2022 - 2026)
+              </button>
+            </div>
           </td>
         </tr>
       `;
@@ -57,12 +86,35 @@ export const ContractsTableComponent = {
       const rowKey = `${c.codigo_convocatoria}-${c.numero_item}`;
       const fecha = c.fecha_suscripcion_contrato ? c.fecha_suscripcion_contrato.split('T')[0] : '--';
       const isPostorUnico = Boolean(c.es_postor_unico);
-      const monto = Number(c.monto_contratado_item || 0);
+      const isConsorcio = Boolean(c.es_consorcio);
+      const etiquetaModalidad = c.etiqueta_modalidad || (isConsorcio ? `EN CONSORCIO (1/${c.total_miembros || 2})` : 'INDIVIDUAL (100%)');
+      const montoAtribuido = Number(c.monto_contratado_item || 0);
+      const montoTotalContrato = Number(c.monto_total_contrato || montoAtribuido);
       const tieneResolucion = (c.tiene_resolucion || '').toUpperCase() === 'SÍ';
 
       const pdfBtn = c.url_contrato 
         ? `<a href="${c.url_contrato}" target="_blank" rel="noopener noreferrer" class="px-2 py-0.5 bg-vermilion text-white text-[9px] font-bold hover:bg-vermilion-dark transition" title="Ver contrato digital en SEACE">PDF ↗</a>`
         : `<span class="text-stone-400 text-[10px]">--</span>`;
+
+      const modalidadBadge = isConsorcio
+        ? `<div class="mt-1 flex flex-wrap items-center gap-1">
+             <span class="px-1.5 py-0.5 bg-amber-600 text-white text-[9px] font-bold tracking-wider">${etiquetaModalidad}</span>
+             ${c.nombre_consorcio ? `<span class="text-[9px] text-amber-700 dark:text-amber-300 font-semibold truncate max-w-[200px]" title="${c.nombre_consorcio}">${c.nombre_consorcio}</span>` : ''}
+           </div>`
+        : `<div class="mt-1">
+             <span class="px-1.5 py-0.5 bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-stone-300 text-[9px] font-semibold">INDIVIDUAL (100%)</span>
+           </div>`;
+
+      const dualMontoHtml = isConsorcio
+        ? `<div class="font-bold text-vermilion dark:text-vermilion-light" title="Monto adjudicado equitativo (1/${c.total_miembros || 2}) para esta empresa">
+             S/ ${montoAtribuido.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+           </div>
+           <div class="text-[9px] text-stone-500 dark:text-stone-400 font-normal" title="Monto total íntegro del contrato suscrito por el consorcio">
+             Total Contrato: S/ ${montoTotalContrato.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+           </div>`
+        : `<div class="font-bold text-sumi-black dark:text-stone-100">
+             S/ ${montoAtribuido.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+           </div>`;
 
       return `
         <!-- Fila Principal de Contrato -->
@@ -76,6 +128,7 @@ export const ContractsTableComponent = {
           <td class="py-3 px-3">
             <div class="font-bold text-sumi-black dark:text-stone-100">${c.numero_contrato || c.codigo_contrato}</div>
             <div class="text-[10px] text-stone-400 font-mono">Cód: ${c.codigo_contrato} • Ítem ${c.numero_item}</div>
+            ${modalidadBadge}
           </td>
           <td class="py-3 px-3 max-w-xs">
             <div class="font-semibold text-sumi-black dark:text-stone-200 truncate" title="${c.nombre_entidad}">
@@ -96,8 +149,8 @@ export const ContractsTableComponent = {
           <td class="py-3 px-3 text-center whitespace-nowrap font-serif text-stone-600 dark:text-stone-400">
             ${fecha}
           </td>
-          <td class="py-3 px-3 text-right whitespace-nowrap font-bold text-sumi-black dark:text-stone-100">
-            S/ ${monto.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <td class="py-3 px-3 text-right whitespace-nowrap">
+            ${dualMontoHtml}
             ${tieneResolucion ? '<div class="text-[9px] text-red-600 font-bold">RESOLUCIÓN</div>' : ''}
           </td>
           <td class="py-3 px-3 text-center whitespace-nowrap">

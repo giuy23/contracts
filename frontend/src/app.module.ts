@@ -6,6 +6,7 @@ import { DatabaseModule } from './database/database.module';
 import { FiltrosModule } from './filtros/filtros.module';
 import { CockpitModule } from './cockpit/cockpit.module';
 import { ContratistasModule } from './contratistas/contratistas.module';
+import { PostorUnicoModule } from './postor-unico/postor-unico.module';
 
 @Module({
   imports: [
@@ -20,7 +21,8 @@ import { ContratistasModule } from './contratistas/contratistas.module';
     DatabaseModule,
     FiltrosModule,
     CockpitModule,
-    ContratistasModule
+    ContratistasModule,
+    PostorUnicoModule
   ]
 })
 export class AppModule {}

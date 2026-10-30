@@ -128,14 +128,14 @@
       
       <!-- Brand & Mon Crest -->
       <div class="flex items-center gap-3">
-        <a href="/index.html" class="w-10 h-10 octagon-frame bg-vermilion flex items-center justify-center text-white shadow-sm ring-2 ring-vermilion-light/50 flex-shrink-0 hover:scale-105 transition" title="Ir al Cockpit General">
+        <a id="headerLogoLink" href="/index.html" class="w-10 h-10 octagon-frame bg-vermilion flex items-center justify-center text-white shadow-sm ring-2 ring-vermilion-light/50 flex-shrink-0 hover:scale-105 transition" title="Ir al Cockpit General">
           <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
             <path d="M12 2L14.8 9H9.2L12 2ZM3 10H21V12H19V20H17V12H13V22H11V12H7V20H5V12H3V10ZM12 5.5L10.8 8.5H13.2L12 5.5Z"></path>
           </svg>
         </a>
         <div>
           <div class="flex items-center gap-2">
-            <a href="/index.html" class="font-cinzel text-lg font-black tracking-widest text-sumi-black dark:text-stone-100 uppercase hover:text-vermilion transition">
+            <a id="headerBrandLink" href="/index.html" class="font-cinzel text-lg font-black tracking-widest text-sumi-black dark:text-stone-100 uppercase hover:text-vermilion transition">
               OECE / RONIN<span class="text-vermilion">.SEACE</span>
             </a>
           </div>
@@ -150,18 +150,18 @@
           <span>SUITE FORENSE:</span>
         </div>
         
-        <a href="/index.html" class="nav-tab-btn px-3 py-1.5 text-xs font-cinzel font-semibold tracking-wider uppercase text-sumi-black dark:text-stone-300 hover:text-vermilion hover:bg-stone-200/50 dark:hover:bg-sumi-surface border border-transparent hover:border-washi-border transition flex items-center gap-1">
+        <a id="navTabGeneralLink" href="/index.html" class="nav-tab-btn px-3 py-1.5 text-xs font-cinzel font-semibold tracking-wider uppercase text-sumi-black dark:text-stone-300 hover:text-vermilion hover:bg-stone-200/50 dark:hover:bg-sumi-surface border border-transparent hover:border-washi-border transition flex items-center gap-1">
           <span>01. VISIÓN GENERAL</span>
         </a>
 
-        <a href="/contratista.html" class="nav-tab-btn active px-3 py-1.5 text-xs font-cinzel font-bold tracking-wider uppercase bg-vermilion text-white shadow-sm border border-vermilion-light flex items-center gap-1.5">
+        <a id="navTabContratistaLink" href="/contratista.html" class="nav-tab-btn active px-3 py-1.5 text-xs font-cinzel font-bold tracking-wider uppercase bg-vermilion text-white shadow-sm border border-vermilion-light flex items-center gap-1.5">
           <span class="text-[9px] text-gold-crest">✦</span>
           <span>02. PERFIL CONTRATISTA</span>
         </a>
 
-        <button class="nav-tab-btn opacity-60 cursor-not-allowed px-3 py-1.5 text-xs font-cinzel font-semibold tracking-wider uppercase text-stone-400 border border-transparent flex items-center gap-1" title="Próxima fase">
-          <span>03. EXPLORADOR POR ÍTEM</span>
-        </button>
+        <a id="navTabPostorUnicoLink" href="/postor-unico.html" class="nav-tab-btn px-3 py-1.5 text-xs font-cinzel font-semibold tracking-wider uppercase text-sumi-black dark:text-stone-300 hover:text-vermilion hover:bg-stone-200/50 dark:hover:bg-sumi-surface border border-transparent hover:border-washi-border transition flex items-center gap-1">
+          <span>03. RADAR POSTOR ÚNICO</span>
+        </a>
 
         <button class="nav-tab-btn opacity-60 cursor-not-allowed px-3 py-1.5 text-xs font-cinzel font-semibold tracking-wider uppercase text-stone-400 border border-transparent flex items-center gap-1" title="Próxima fase">
           <span>04. SHA-256 AUDITORÍA</span>
@@ -170,7 +170,12 @@
 
       <!-- Right Controls: Volver & Theme Toggle -->
       <div class="flex items-center gap-2 sm:gap-3">
-        <a href="/index.html" class="px-3 py-1.5 border border-vermilion bg-vermilion/10 text-vermilion hover:bg-vermilion hover:text-white font-cinzel text-xs font-bold tracking-wider transition flex items-center gap-1.5 shadow-sm">
+        <a id="btnVolverPostorUnico" href="/postor-unico.html" class="hidden px-3 py-1.5 border border-gold-crest bg-gold-crest/15 text-sumi-black dark:text-gold-light hover:bg-gold-crest hover:text-sumi-black font-cinzel text-xs font-bold tracking-wider transition flex items-center gap-1.5 shadow-sm">
+          <span>←</span>
+          <span>VOLVER AL RADAR POSTOR ÚNICO</span>
+        </a>
+
+        <a id="btnVolverGeneral" href="/index.html" class="px-3 py-1.5 border border-vermilion bg-vermilion/10 text-vermilion hover:bg-vermilion hover:text-white font-cinzel text-xs font-bold tracking-wider transition flex items-center gap-1.5 shadow-sm">
           <span>←</span>
           <span>VOLVER A VISIÓN GENERAL</span>
         </a>
@@ -220,6 +225,14 @@
             id="searchDropdown" 
             class="hidden absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-sumi-deep border border-vermilion/50 shadow-xl max-h-72 overflow-y-auto divide-y divide-washi-border dark:divide-sumi-border">
           </div>
+
+          <!-- Mensaje de Validación de RUC / Formato -->
+          <div 
+            id="searchValidationMsg" 
+            class="hidden mt-1.5 p-2 bg-red-50 dark:bg-vermilion/10 border-l-2 border-vermilion text-[11px] font-mono text-vermilion dark:text-red-300 flex items-center justify-between">
+            <span id="searchValidationText"></span>
+            <button type="button" class="text-xs ml-2 hover:opacity-80" onclick="document.getElementById('searchValidationMsg').classList.add('hidden')">✕</button>
+          </div>
         </div>
 
         <!-- Selector de Periodo Fiscal / Año -->
@@ -253,6 +266,9 @@
 
       </div>
     </section>
+
+    <!-- BANNER CONTEXTUAL PARA ESTADOS VACÍOS O ALERTAS FORENSES -->
+    <div id="contratistaAlertBanner" class="hidden"></div>
 
     <!-- CONTENEDOR MAESTRO DE 2 COLUMNAS (SIDEBAR VERTICAL FIJO + ÁREA ANALÍTICA BENTO) -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -492,7 +508,7 @@
                     <th class="py-2.5 px-3">Objeto / Modalidad</th>
                     <th class="py-2.5 px-3">Ubicación</th>
                     <th class="py-2.5 px-3 text-center">Fecha Suscripción</th>
-                    <th class="py-2.5 px-3 text-right">Monto Formalizado (S/)</th>
+                    <th class="py-2.5 px-3 text-right">Monto Adjudicado 1/N (S/)</th>
                     <th class="py-2.5 px-3 text-center">Postores</th>
                     <th class="py-2.5 px-2 text-center">SEACE</th>
                   </tr>

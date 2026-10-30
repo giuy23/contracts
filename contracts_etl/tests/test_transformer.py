@@ -37,7 +37,7 @@ def test_clean_and_transform_success(tmp_path: Path):
     # Verificar limpieza de la fila válida
     valid_row = valid_df.iloc[0]
     assert valid_row["codigo_convocatoria"] == "CONV-001"
-    assert valid_row["num_item"] == 1
+    assert valid_row["numero_item"] == 1
     assert valid_row["ruc_entidad"] == "20131312955"
     assert valid_row["monto_referencial_proceso"] == 1500.50
 
@@ -73,4 +73,34 @@ def test_nullable_false_rejection(tmp_path: Path):
     assert len(valid_df) == 0
     assert len(rejected_df) == 1
     assert "REQUERIDO_NULO" in rejected_df.iloc[0]["motivo_rechazo"]
+
+
+def test_consorcios_schema_aliases_and_doc_code(tmp_path: Path):
+    schema = load_schema("schema_consorcios.json")
+
+    raw_data = {
+        "AÑO": ["2024", "2024"],
+        "RUC_CONSORCIO": ["1589451.0", "1589451"],
+        "CONSORCIO": ["CONSORCIO LUCANA", "CONSORCIO LUCANA"],
+        "RUC_MIEMBRO": ["20527942773.0", None],
+        "MIEMBRO": ["INVERSIONES AGUILAR EIRL", "EMPRESA SIN RUC"]
+    }
+    raw_df = pd.DataFrame(raw_data)
+
+    valid_df, rejected_df = clean_and_transform(
+        df=raw_df,
+        schema_config=schema,
+        table_name="stg_consorcios_raw",
+        filename="CONOSCE_CONSORCIO2024_0.xlsx",
+        rejected_dir=tmp_path
+    )
+
+    assert len(valid_df) == 1
+    assert len(rejected_df) == 1
+    valid_row = valid_df.iloc[0]
+    assert valid_row["codigo_consorcio"] == "1589451"
+    assert valid_row["ruc_miembro"] == "20527942773"
+    assert valid_row["nombre_consorcio"] == "CONSORCIO LUCANA"
+    assert valid_row["nombre_miembro"] == "INVERSIONES AGUILAR EIRL"
+
 

@@ -4,17 +4,47 @@
  */
 
 const PALETTE = [
-  '#9E1B1E', // Bermellón principal
-  '#C5A059', // Oro cresta
-  '#362E3B', // Sumi carbón
-  '#0D9488', // Jade / Teal
-  '#D97706', // Ámbar
-  '#7C3AED', // Púrpura imperial
-  '#2563EB', // Azul cobalto
-  '#6B7280'  // Gris neutro
+  '#9E1B1E', // 01. Bermellón Imperial
+  '#C5A059', // 02. Oro Cresta
+  '#0D9488', // 03. Jade Teal
+  '#2563EB', // 04. Azul Cobalto
+  '#D97706', // 05. Ámbar Real
+  '#7C3AED', // 06. Púrpura Kyoto
+  '#E11D48', // 07. Carmesí Rosa
+  '#059669', // 08. Esmeralda
+  '#4F46E5', // 09. Índigo Profundo
+  '#EA580C', // 10. Terracota
+  '#0284C7', // 11. Celeste Pacífico
+  '#9333EA', // 12. Amatista
+  '#65A30D', // 13. Verde Bambú
+  '#DC2626', // 14. Rojo Escarlata
+  '#0891B2', // 15. Cian Oscuro
+  '#CA8A04', // 16. Ocre Dorado
+  '#DB2777', // 17. Magenta
+  '#16A34A', // 18. Verde Bosque
+  '#1D4ED8', // 19. Azul Marino
+  '#B45309', // 20. Bronce
+  '#6D28D9', // 21. Violeta
+  '#0F766E', // 22. Turquesa Oscuro
+  '#BE123C', // 23. Granate
+  '#4338CA', // 24. Azul Ultramar
+  '#A16207', // 25. Mostaza Antigua
+  '#15803D', // 26. Verde Olivo
+  '#C2410C', // 27. Cobre
+  '#374151'  // 28. Sumi Carbón
 ];
 
 export const DonutChartComponent = {
+  renderLoading(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = `
+      <div class="p-8 text-center text-stone-400 font-mono text-xs">
+        <span class="inline-block animate-spin mr-2">☯</span> Analizando distribución territorial de expedientes...
+      </div>
+    `;
+  },
+
   render(containerId, items) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -22,7 +52,11 @@ export const DonutChartComponent = {
     if (!items || items.length === 0) {
       container.innerHTML = `
         <div class="p-8 text-center text-stone-400 font-mono text-xs">
-          Sin distribución territorial registrada en este periodo.
+          <div class="text-xl mb-1">🗺️</div>
+          <div>Sin contratos ni distribución territorial en este periodo.</div>
+          <div class="mt-2 text-[10px] text-stone-500 font-serif italic">
+            Pruebe seleccionando "Todos los años" en el filtro de Ejercicio Fiscal.
+          </div>
         </div>
       `;
       return;
@@ -73,8 +107,8 @@ export const DonutChartComponent = {
       />
     `).join('');
 
-    // Leyenda lateral
-    const legendItems = slices.slice(0, 6).map((s) => {
+    // Leyenda lateral completa (sin recortar ni agrupar en Otros)
+    const legendItems = slices.map((s) => {
       const montoText = s.monto_total_soles >= 1_000_000
         ? `S/ ${(s.monto_total_soles / 1_000_000).toLocaleString('es-PE', { maximumFractionDigits: 2 })} MM`
         : `S/ ${s.monto_total_soles.toLocaleString('es-PE', { maximumFractionDigits: 0 })}`;
@@ -120,14 +154,9 @@ export const DonutChartComponent = {
           </div>
         </div>
 
-        <!-- Leyenda detallada -->
-        <div class="flex-1 w-full space-y-0.5 divide-y divide-washi-border/40 dark:divide-sumi-border/40 font-mono">
+        <!-- Leyenda detallada completa -->
+        <div class="flex-1 w-full max-h-52 overflow-y-auto pr-1 space-y-0.5 divide-y divide-washi-border/40 dark:divide-sumi-border/40 font-mono">
           ${legendItems}
-          ${slices.length > 6 ? `
-            <div class="pt-1 text-[10px] text-stone-400 text-center font-serif italic">
-              +${slices.length - 6} departamentos adicionales agrupados
-            </div>
-          ` : ''}
         </div>
       </div>
     `;
@@ -165,4 +194,3 @@ export const DonutChartComponent = {
     });
   }
 };
-

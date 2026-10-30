@@ -11,33 +11,40 @@ export class ContratistasService {
 
   /**
    * Búsqueda predictiva de empresas por RUC o Razón Social
+   * Filtra exclusivamente entidades que actúan como PROVEEDOR o AMBOS (excluye ENTIDAD pura).
    */
   async search(query: string) {
     if (!query || query.trim().length < 2) return [];
-    const term = `%${query.trim()}%`;
+    const cleanQuery = query.trim();
+    const isRuc = /^\d+$/.test(cleanQuery);
+    const term = `%${cleanQuery}%`;
+
     const sql = `
       SELECT 
-        o.numero_documento AS ruc,
-        o.razon_social,
-        COALESCE(
-          CASE 
-            WHEN o.tipo_proveedor LIKE '%CONSORCIO%' OR o.razon_social LIKE '%CONSORCIO%' THEN 'CONSORCIO'
-            ELSE 'INDIVIDUAL'
-          END, 'INDIVIDUAL'
-        ) AS tipo_proveedor,
-        COUNT(c.codigo_contrato) AS total_contratos
-      FROM organizaciones o
-      LEFT JOIN contratos c ON o.id_organizacion = c.id_contratista
-      WHERE o.numero_documento LIKE ? OR o.razon_social LIKE ?
-      GROUP BY o.id_organizacion, o.numero_documento, o.razon_social, o.tipo_proveedor
-      ORDER BY total_contratos DESC, o.razon_social ASC
+        emp.numero_documento AS ruc,
+        emp.razon_social,
+        'INDIVIDUAL' AS tipo_proveedor,
+        COUNT(DISTINCT c.codigo_contrato, c.numero_item) AS total_contratos
+      FROM organizaciones emp
+      LEFT JOIN puente_actor_empresa pae 
+        ON emp.id_organizacion = pae.id_empresa_real
+      LEFT JOIN contratos c 
+        ON pae.id_actor_original = c.id_contratista
+      WHERE emp.tipo_actor IN ('PROVEEDOR', 'AMBOS')
+        AND COALESCE(emp.tipo_proveedor, 'INDIVIDUAL') != 'Consorcio'
+        AND emp.razon_social NOT LIKE 'CONSORCIO %'
+        AND emp.razon_social NOT LIKE '%CONSORCIO%'
+        AND (${isRuc ? 'emp.numero_documento LIKE ?' : 'emp.numero_documento LIKE ? OR emp.razon_social LIKE ?'})
+      GROUP BY emp.id_organizacion, emp.numero_documento, emp.razon_social
+      ORDER BY total_contratos DESC, emp.razon_social ASC
       LIMIT 10;
     `;
-    return this.db.query(sql, [term, term]);
+    const params = isRuc ? [term] : [term, term];
+    return this.db.query(sql, params);
   }
 
   /**
-   * 3.1. Ficha de Identidad y KPIs Consolidados (1 Round-Trip)
+   * 3.1. Ficha de Identidad y KPIs Consolidados (1 Round-Trip con Prorrateo 1/N)
    */
   async getSummary(ruc: string, yearParam?: string) {
     const year = yearParam && yearParam !== 'all' ? parseInt(yearParam, 10) : null;
@@ -48,42 +55,50 @@ export class ContratistasService {
               o.id_organizacion,
               o.numero_documento AS ruc,
               o.razon_social,
-              COALESCE(
-                  CASE 
-                      WHEN o.tipo_proveedor LIKE '%CONSORCIO%' OR o.razon_social LIKE '%CONSORCIO%' THEN 'CONSORCIO'
-                      ELSE 'INDIVIDUAL'
-                  END, 'INDIVIDUAL'
-              ) AS tipo_proveedor,
+              'INDIVIDUAL' AS tipo_proveedor,
               COALESCE(o.departamento_sede, 'NO REGISTRADO') AS departamento_sede
           FROM organizaciones o
           WHERE o.numero_documento = ?
+            AND COALESCE(o.tipo_proveedor, 'INDIVIDUAL') != 'Consorcio'
           LIMIT 1
+      ),
+      actores_empresa AS (
+          SELECT 
+              pae.id_actor_original,
+              pae.es_consorcio,
+              pae.factor_equitativo
+          FROM info_empresa ie
+          INNER JOIN puente_actor_empresa pae 
+              ON ie.id_organizacion = pae.id_empresa_real
       ),
       contratos_empresa AS (
           SELECT 
               c.codigo_contrato,
               c.numero_item,
               c.codigo_convocatoria,
-              c.monto_contratado_item,
+              SUM(ROUND(c.monto_contratado_item * ae.factor_equitativo, 2)) AS monto_atribuido_item,
               conv.ruc_entidad,
               (
-                  SELECT COUNT(*) 
+                  SELECT COUNT(DISTINCT ofe.id_postor) 
                   FROM ofertantes ofe 
                   WHERE ofe.codigo_convocatoria = c.codigo_convocatoria 
                     AND ofe.numero_item = c.numero_item
               ) AS cant_postores
           FROM contratos c
-          JOIN info_empresa ie ON c.id_contratista = ie.id_organizacion
+          INNER JOIN actores_empresa ae 
+              ON c.id_contratista = ae.id_actor_original
           LEFT JOIN convocatorias conv 
               ON c.codigo_convocatoria = conv.codigo_convocatoria 
              AND c.numero_item = conv.numero_item
           WHERE (? IS NULL OR YEAR(c.fecha_suscripcion_contrato) = ?)
+          GROUP BY c.codigo_contrato, c.numero_item, c.codigo_convocatoria, conv.ruc_entidad
       ),
       postulaciones_empresa AS (
           SELECT 
               COUNT(DISTINCT ofe.codigo_convocatoria, ofe.numero_item) AS total_postulaciones
           FROM ofertantes ofe
-          JOIN info_empresa ie ON ofe.id_postor = ie.id_organizacion
+          INNER JOIN actores_empresa ae 
+              ON ofe.id_postor = ae.id_actor_original
           WHERE (? IS NULL OR YEAR(ofe.fecha_presentacion_propuesta) = ?)
       )
       SELECT 
@@ -91,19 +106,21 @@ export class ContratistasService {
           ie.razon_social,
           ie.tipo_proveedor,
           ie.departamento_sede,
-          COUNT(ce.codigo_contrato) AS total_contratos,
-          COALESCE(SUM(ce.monto_contratado_item), 0.00) AS monto_total_soles,
+          COUNT(DISTINCT ce.codigo_contrato, ce.numero_item) AS total_contratos,
+          COALESCE(SUM(ce.monto_atribuido_item), 0.00) AS monto_total_soles,
           COUNT(DISTINCT ce.ruc_entidad) AS entidades_distintas,
           ROUND(
               COALESCE(
-                  (SUM(CASE WHEN ce.cant_postores = 1 THEN 1 ELSE 0 END) * 100.0) / NULLIF(COUNT(ce.codigo_contrato), 0),
+                  (SUM(CASE WHEN ce.cant_postores = 1 THEN 1 ELSE 0 END) * 100.0) / 
+                  NULLIF(COUNT(DISTINCT ce.codigo_contrato, ce.numero_item), 0),
                   0.00
               ), 1
           ) AS tasa_postor_unico_pct,
           COALESCE(pe.total_postulaciones, 0) AS total_postulaciones,
           ROUND(
               COALESCE(
-                  (COUNT(ce.codigo_contrato) * 100.0) / NULLIF(pe.total_postulaciones, 0),
+                  (COUNT(DISTINCT ce.codigo_contrato, ce.numero_item) * 100.0) / 
+                  NULLIF(pe.total_postulaciones, 0),
                   0.00
               ), 1
           ) AS win_rate_pct
@@ -138,7 +155,7 @@ export class ContratistasService {
   }
 
   /**
-   * 3.2. Concentración por Entidades Públicas (Clientes Principales)
+   * 3.2. Concentración por Entidades Públicas (Clientes Principales con Prorrateo 1/N)
    */
   async getClientes(ruc: string, yearParam?: string) {
     const year = yearParam && yearParam !== 'all' ? parseInt(yearParam, 10) : null;
@@ -146,16 +163,21 @@ export class ContratistasService {
       WITH empresa_base AS (
           SELECT id_organizacion FROM organizaciones WHERE numero_documento = ? LIMIT 1
       ),
+      actores_empresa AS (
+          SELECT pae.id_actor_original, pae.factor_equitativo
+          FROM empresa_base eb
+          INNER JOIN puente_actor_empresa pae ON eb.id_organizacion = pae.id_empresa_real
+      ),
       contratos_empresa AS (
           SELECT 
               conv.ruc_entidad,
               conv.nombre_entidad,
               c.codigo_contrato,
               c.numero_item,
-              c.monto_contratado_item
+              ROUND(c.monto_contratado_item * ae.factor_equitativo, 2) AS monto_contratado_item
           FROM contratos c
-          JOIN empresa_base eb ON c.id_contratista = eb.id_organizacion
-          JOIN convocatorias conv 
+          INNER JOIN actores_empresa ae ON c.id_contratista = ae.id_actor_original
+          INNER JOIN convocatorias conv 
               ON c.codigo_convocatoria = conv.codigo_convocatoria 
              AND c.numero_item = conv.numero_item
           WHERE (? IS NULL OR YEAR(c.fecha_suscripcion_contrato) = ?)
@@ -186,7 +208,7 @@ export class ContratistasService {
   }
 
   /**
-   * 3.3. Distribución Territorial / Geográfica de sus Contratos
+   * 3.3. Distribución Territorial / Geográfica de sus Contratos (Prorrateo 1/N)
    */
   async getTerritorio(ruc: string, yearParam?: string) {
     const year = yearParam && yearParam !== 'all' ? parseInt(yearParam, 10) : null;
@@ -194,15 +216,20 @@ export class ContratistasService {
       WITH empresa_base AS (
           SELECT id_organizacion FROM organizaciones WHERE numero_documento = ? LIMIT 1
       ),
+      actores_empresa AS (
+          SELECT pae.id_actor_original, pae.factor_equitativo
+          FROM empresa_base eb
+          INNER JOIN puente_actor_empresa pae ON eb.id_organizacion = pae.id_empresa_real
+      ),
       contratos_empresa AS (
           SELECT 
               COALESCE(NULLIF(TRIM(conv.departamento_item), ''), 'NO ESPECIFICADO') AS departamento,
               c.codigo_contrato,
               c.numero_item,
-              c.monto_contratado_item
+              ROUND(c.monto_contratado_item * ae.factor_equitativo, 2) AS monto_contratado_item
           FROM contratos c
-          JOIN empresa_base eb ON c.id_contratista = eb.id_organizacion
-          JOIN convocatorias conv 
+          INNER JOIN actores_empresa ae ON c.id_contratista = ae.id_actor_original
+          INNER JOIN convocatorias conv 
               ON c.codigo_convocatoria = conv.codigo_convocatoria 
              AND c.numero_item = conv.numero_item
           WHERE (? IS NULL OR YEAR(c.fecha_suscripcion_contrato) = ?)
@@ -230,20 +257,25 @@ export class ContratistasService {
   }
 
   /**
-   * 3.4. Evolución Histórica Anual (Línea de Tiempo 2022-2026)
+   * 3.4. Evolución Histórica Anual (Línea de Tiempo 2022-2026 con Prorrateo 1/N)
    */
   async getTimeline(ruc: string) {
     const sql = `
       WITH empresa_base AS (
           SELECT id_organizacion FROM organizaciones WHERE numero_documento = ? LIMIT 1
+      ),
+      actores_empresa AS (
+          SELECT pae.id_actor_original, pae.factor_equitativo
+          FROM empresa_base eb
+          INNER JOIN puente_actor_empresa pae ON eb.id_organizacion = pae.id_empresa_real
       )
       SELECT 
           YEAR(c.fecha_suscripcion_contrato) AS year,
           COUNT(DISTINCT c.codigo_contrato, c.numero_item) AS total_contratos,
-          COALESCE(SUM(c.monto_contratado_item), 0.00) AS monto_total_soles,
+          COALESCE(SUM(ROUND(c.monto_contratado_item * ae.factor_equitativo, 2)), 0.00) AS monto_total_soles,
           COUNT(DISTINCT conv.ruc_entidad) AS entidades_atendidas
       FROM contratos c
-      JOIN empresa_base eb ON c.id_contratista = eb.id_organizacion
+      INNER JOIN actores_empresa ae ON c.id_contratista = ae.id_actor_original
       LEFT JOIN convocatorias conv 
           ON c.codigo_convocatoria = conv.codigo_convocatoria 
          AND c.numero_item = conv.numero_item
@@ -261,7 +293,7 @@ export class ContratistasService {
   }
 
   /**
-   * 3.5. Red Forense de Rivales Habituales (Bid Rigging Check)
+   * 3.5. Red Forense de Rivales Habituales (Bid Rigging Check entre Empresas Reales)
    */
   async getCompetidores(ruc: string, yearParam?: string) {
     const year = yearParam && yearParam !== 'all' ? parseInt(yearParam, 10) : null;
@@ -269,45 +301,57 @@ export class ContratistasService {
       WITH empresa_base AS (
           SELECT id_organizacion FROM organizaciones WHERE numero_documento = ? LIMIT 1
       ),
+      actores_empresa AS (
+          SELECT pae.id_actor_original
+          FROM empresa_base eb
+          INNER JOIN puente_actor_empresa pae ON eb.id_organizacion = pae.id_empresa_real
+      ),
       items_empresa AS (
-          SELECT 
+          SELECT DISTINCT
               o.codigo_convocatoria, 
-              o.numero_item
+              o.numero_item,
+              o.id_postor AS id_postor_propio
           FROM ofertantes o
-          JOIN empresa_base eb ON o.id_postor = eb.id_organizacion
+          INNER JOIN actores_empresa ae ON o.id_postor = ae.id_actor_original
           WHERE (? IS NULL OR YEAR(o.fecha_presentacion_propuesta) = ?)
       ),
-      rivales AS (
-          SELECT 
-              o_rival.id_postor,
+      rivales_reales AS (
+          SELECT DISTINCT
+              pae_rival.id_empresa_real AS id_rival_real,
               ie.codigo_convocatoria,
               ie.numero_item
           FROM items_empresa ie
-          JOIN ofertantes o_rival 
+          INNER JOIN ofertantes o_rival 
               ON ie.codigo_convocatoria = o_rival.codigo_convocatoria 
              AND ie.numero_item = o_rival.numero_item
-          JOIN empresa_base eb ON o_rival.id_postor != eb.id_organizacion
+             AND o_rival.id_postor != ie.id_postor_propio
+          INNER JOIN puente_actor_empresa pae_rival 
+              ON o_rival.id_postor = pae_rival.id_actor_original
+          INNER JOIN empresa_base eb 
+              ON pae_rival.id_empresa_real != eb.id_organizacion
       ),
-      ganadores_items AS (
-          SELECT 
+      ganadores_reales AS (
+          SELECT DISTINCT
               adj.codigo_convocatoria,
               adj.numero_item,
-              adj.id_proveedor AS id_ganador
+              pae_gan.id_empresa_real AS id_ganador_real
           FROM adjudicaciones adj
-          JOIN items_empresa ie 
+          INNER JOIN (SELECT DISTINCT codigo_convocatoria, numero_item FROM items_empresa) ie
               ON adj.codigo_convocatoria = ie.codigo_convocatoria 
              AND adj.numero_item = ie.numero_item
+          INNER JOIN puente_actor_empresa pae_gan
+              ON adj.id_proveedor = pae_gan.id_actor_original
       )
       SELECT 
           org.numero_documento AS ruc_rival,
           org.razon_social AS rival,
           COUNT(DISTINCT r.codigo_convocatoria, r.numero_item) AS procesos_competidos,
-          COUNT(DISTINCT CASE WHEN g.id_ganador = eb.id_organizacion THEN CONCAT(r.codigo_convocatoria, '-', r.numero_item) END) AS victorias_empresa_consultada,
-          COUNT(DISTINCT CASE WHEN g.id_ganador = r.id_postor THEN CONCAT(r.codigo_convocatoria, '-', r.numero_item) END) AS victorias_rival
-      FROM rivales r
-      JOIN empresa_base eb ON 1=1
-      JOIN organizaciones org ON r.id_postor = org.id_organizacion
-      LEFT JOIN ganadores_items g 
+          COUNT(DISTINCT CASE WHEN g.id_ganador_real = eb.id_organizacion THEN CONCAT(r.codigo_convocatoria, '-', r.numero_item) END) AS victorias_empresa_consultada,
+          COUNT(DISTINCT CASE WHEN g.id_ganador_real = r.id_rival_real THEN CONCAT(r.codigo_convocatoria, '-', r.numero_item) END) AS victorias_rival
+      FROM rivales_reales r
+      CROSS JOIN empresa_base eb
+      INNER JOIN organizaciones org ON r.id_rival_real = org.id_organizacion
+      LEFT JOIN ganadores_reales g 
           ON r.codigo_convocatoria = g.codigo_convocatoria 
          AND r.numero_item = g.numero_item
       GROUP BY org.id_organizacion, org.numero_documento, org.razon_social, eb.id_organizacion
@@ -325,7 +369,7 @@ export class ContratistasService {
   }
 
   /**
-   * 3.6. Grilla Detallada de Contratos (Paginada y Auditada)
+   * 3.6. Grilla Detallada de Contratos (Paginada y Auditada con Doble Monto y Etiqueta 1/N)
    */
   async getContratos(ruc: string, yearParam?: string, limit = 50, offset = 0) {
     const year = yearParam && yearParam !== 'all' ? parseInt(yearParam, 10) : null;
@@ -346,28 +390,40 @@ export class ContratistasService {
           COALESCE(conv.departamento_item, 'NO REGISTRADO') AS departamento_item,
           COALESCE(conv.provincia_item, 'NO REGISTRADO') AS provincia_item,
           c.fecha_suscripcion_contrato,
-          c.monto_contratado_item,
-          COALESCE(sub_ofert.cant_postores, 0) AS cantidad_postores,
-          CASE WHEN COALESCE(sub_ofert.cant_postores, 0) = 1 THEN 1 ELSE 0 END AS es_postor_unico,
+          c.monto_contratado_item AS monto_total_contrato,
+          ROUND(c.monto_contratado_item * pae.factor_equitativo, 2) AS monto_contratado_item,
+          pae.es_consorcio,
+          pae.etiqueta_modalidad,
+          pae.nombre_consorcio,
+          pae.total_miembros,
+          pae.porcentaje_equitativo,
+          (
+              SELECT COUNT(DISTINCT o.id_postor)
+              FROM ofertantes o
+              WHERE o.codigo_convocatoria = c.codigo_convocatoria
+                AND o.numero_item = c.numero_item
+          ) AS cantidad_postores,
+          CASE 
+              WHEN (
+                  SELECT COUNT(DISTINCT o.id_postor)
+                  FROM ofertantes o
+                  WHERE o.codigo_convocatoria = c.codigo_convocatoria
+                    AND o.numero_item = c.numero_item
+              ) = 1 THEN 1 
+              ELSE 0 
+          END AS es_postor_unico,
           COALESCE(c.tiene_resolucion, 'NO') AS tiene_resolucion,
           c.url_contrato
       FROM contratos c
-      JOIN empresa_base eb ON c.id_contratista = eb.id_organizacion
+      INNER JOIN puente_actor_empresa pae 
+          ON c.id_contratista = pae.id_actor_original
+      INNER JOIN empresa_base eb 
+          ON pae.id_empresa_real = eb.id_organizacion
       LEFT JOIN convocatorias conv 
           ON c.codigo_convocatoria = conv.codigo_convocatoria 
          AND c.numero_item = conv.numero_item
-      LEFT JOIN (
-          SELECT 
-              o.codigo_convocatoria, 
-              o.numero_item, 
-              COUNT(DISTINCT o.id_postor) AS cant_postores
-          FROM ofertantes o
-          GROUP BY o.codigo_convocatoria, o.numero_item
-      ) sub_ofert 
-          ON c.codigo_convocatoria = sub_ofert.codigo_convocatoria 
-         AND c.numero_item = sub_ofert.numero_item
       WHERE (? IS NULL OR YEAR(c.fecha_suscripcion_contrato) = ?)
-      ORDER BY c.fecha_suscripcion_contrato DESC, c.monto_contratado_item DESC
+      ORDER BY c.fecha_suscripcion_contrato DESC, monto_contratado_item DESC
       LIMIT ? OFFSET ?;
     `;
     const rows = await this.db.query(sql, [ruc, year, year, limit, offset]);
@@ -384,7 +440,13 @@ export class ContratistasService {
       departamento_item: r.departamento_item,
       provincia_item: r.provincia_item,
       fecha_suscripcion_contrato: r.fecha_suscripcion_contrato,
-      monto_contratado_item: Number(r.monto_contratado_item),
+      monto_total_contrato: Number(r.monto_total_contrato || 0),
+      monto_contratado_item: Number(r.monto_contratado_item || 0),
+      es_consorcio: Boolean(r.es_consorcio),
+      etiqueta_modalidad: r.etiqueta_modalidad || 'INDIVIDUAL',
+      nombre_consorcio: r.nombre_consorcio || null,
+      total_miembros: Number(r.total_miembros || 1),
+      porcentaje_equitativo: Number(r.porcentaje_equitativo || 100),
       cantidad_postores: Number(r.cantidad_postores),
       es_postor_unico: Boolean(r.es_postor_unico),
       tiene_resolucion: r.tiene_resolucion,
@@ -454,7 +516,10 @@ export class ContratistasService {
       { header: 'Departamento', key: 'departamento_item', width: 18 },
       { header: 'Provincia', key: 'provincia_item', width: 18 },
       { header: 'Fecha Suscripción', key: 'fecha_suscripcion_contrato', width: 16 },
-      { header: 'Monto Formalizado (S/)', key: 'monto_contratado_item', width: 24 },
+      { header: 'Modalidad Participación', key: 'etiqueta_modalidad', width: 22 },
+      { header: 'Consorcio Integrado', key: 'nombre_consorcio', width: 34 },
+      { header: 'Monto Total Contrato (S/)', key: 'monto_total_contrato', width: 24 },
+      { header: 'Monto Adjudicado Empresa 1/N (S/)', key: 'monto_contratado_item', width: 28 },
       { header: 'Postores', key: 'cantidad_postores', width: 10 },
       { header: 'Postor Único', key: 'es_postor_unico', width: 13 },
       { header: 'Tiene Resolución', key: 'tiene_resolucion', width: 15 },
@@ -488,23 +553,37 @@ export class ContratistasService {
           COALESCE(conv.departamento_item, 'NO REGISTRADO') AS departamento_item,
           COALESCE(conv.provincia_item, 'NO REGISTRADO') AS provincia_item,
           c.fecha_suscripcion_contrato,
-          c.monto_contratado_item,
-          COALESCE(sub_ofert.cant_postores, 0) AS cantidad_postores,
-          CASE WHEN COALESCE(sub_ofert.cant_postores, 0) = 1 THEN 'SÍ' ELSE 'NO' END AS es_postor_unico,
+          pae.etiqueta_modalidad,
+          COALESCE(pae.nombre_consorcio, 'PARTICIPACIÓN INDIVIDUAL') AS nombre_consorcio,
+          c.monto_contratado_item AS monto_total_contrato,
+          ROUND(c.monto_contratado_item * pae.factor_equitativo, 2) AS monto_contratado_item,
+          (
+              SELECT COUNT(DISTINCT o.id_postor)
+              FROM ofertantes o
+              WHERE o.codigo_convocatoria = c.codigo_convocatoria
+                AND o.numero_item = c.numero_item
+          ) AS cantidad_postores,
+          CASE 
+              WHEN (
+                  SELECT COUNT(DISTINCT o.id_postor)
+                  FROM ofertantes o
+                  WHERE o.codigo_convocatoria = c.codigo_convocatoria
+                    AND o.numero_item = c.numero_item
+              ) = 1 THEN 'SÍ' 
+              ELSE 'NO' 
+          END AS es_postor_unico,
           COALESCE(c.tiene_resolucion, 'NO') AS tiene_resolucion,
           c.url_contrato
       FROM contratos c
-      JOIN empresa_base eb ON c.id_contratista = eb.id_organizacion
+      INNER JOIN puente_actor_empresa pae 
+          ON c.id_contratista = pae.id_actor_original
+      INNER JOIN empresa_base eb 
+          ON pae.id_empresa_real = eb.id_organizacion
       LEFT JOIN convocatorias conv 
           ON c.codigo_convocatoria = conv.codigo_convocatoria 
          AND c.numero_item = conv.numero_item
-      LEFT JOIN (
-          SELECT o.codigo_convocatoria, o.numero_item, COUNT(DISTINCT o.id_postor) AS cant_postores
-          FROM ofertantes o
-          GROUP BY o.codigo_convocatoria, o.numero_item
-      ) sub_ofert ON c.codigo_convocatoria = sub_ofert.codigo_convocatoria AND c.numero_item = sub_ofert.numero_item
       WHERE (? IS NULL OR YEAR(c.fecha_suscripcion_contrato) = ?)
-      ORDER BY c.fecha_suscripcion_contrato DESC;
+      ORDER BY c.fecha_suscripcion_contrato DESC, monto_contratado_item DESC;
     `;
 
     const rows = await this.db.query(sql, [ruc, year, year]);
@@ -524,16 +603,24 @@ export class ContratistasService {
         departamento_item: r.departamento_item,
         provincia_item: r.provincia_item,
         fecha_suscripcion_contrato: r.fecha_suscripcion_contrato ? new Date(r.fecha_suscripcion_contrato) : null,
-        monto_contratado_item: Number(r.monto_contratado_item),
+        etiqueta_modalidad: r.etiqueta_modalidad || 'INDIVIDUAL',
+        nombre_consorcio: r.nombre_consorcio || 'PARTICIPACIÓN INDIVIDUAL',
+        monto_total_contrato: Number(r.monto_total_contrato || 0),
+        monto_contratado_item: Number(r.monto_contratado_item || 0),
         cantidad_postores: Number(r.cantidad_postores),
         es_postor_unico: r.es_postor_unico,
         tiene_resolucion: r.tiene_resolucion,
         url_contrato: r.url_contrato
       });
 
+      const celdaMontoTotal = row.getCell('monto_total_contrato');
+      celdaMontoTotal.numFmt = '_("S/"* #,##0.00_);_("S/"* \(#,##0.00\);_("S/"* "-"??_);_(@_)';
+      celdaMontoTotal.alignment = { horizontal: 'right' };
+
       const celdaMonto = row.getCell('monto_contratado_item');
       celdaMonto.numFmt = '_("S/"* #,##0.00_);_("S/"* \(#,##0.00\);_("S/"* "-"??_);_(@_)';
       celdaMonto.alignment = { horizontal: 'right' };
+      celdaMonto.font = { bold: true };
 
       const celdaFecha = row.getCell('fecha_suscripcion_contrato');
       celdaFecha.numFmt = 'yyyy-mm-dd';
@@ -550,9 +637,11 @@ export class ContratistasService {
     if (currentRow > 2) {
       const totalRow = worksheet.addRow({
         descripcion_item: 'TOTAL FORMALIZADO AUDITADO (S/)',
-        monto_contratado_item: { formula: `SUM(M2:M${currentRow - 1})` }
+        monto_total_contrato: { formula: `SUM(O2:O${currentRow - 1})` },
+        monto_contratado_item: { formula: `SUM(P2:P${currentRow - 1})` }
       });
       totalRow.font = { bold: true };
+      totalRow.getCell('monto_total_contrato').numFmt = '_("S/"* #,##0.00_);_("S/"* \(#,##0.00\);_("S/"* "-"??_);_(@_)';
       totalRow.getCell('monto_contratado_item').numFmt = '_("S/"* #,##0.00_);_("S/"* \(#,##0.00\);_("S/"* "-"??_);_(@_)';
       totalRow.commit();
     }
